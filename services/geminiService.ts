@@ -1,3 +1,4 @@
+
 import { GoogleGenAI } from "@google/genai";
 import { SYSTEM_PROMPT } from '../constants';
 import { DayEntry } from '../types';
@@ -28,8 +29,10 @@ export const generateDayContent = async (day: DayEntry, previousDays: DayEntry[]
     Staj Türü: ${day.type}
     GÜNÜN SPESİFİK GÖREVİ: ${day.specificTopic}
     ${day.customPrompt ? `ÖZEL DİREKTİF: ${day.customPrompt}` : ''}
-    Görsel İsteği: ${day.hasVisual ? 'Evet' : 'Hayır'}
+    Görsel Durumu: ${day.hasVisual ? 'Görsel Mevcut' : 'Görsel Yok'}
     
+    ${day.imageUrl ? `ÖNEMLİ: Bu gün için seçilen görsel şu konuyu göstermektedir: "${day.specificTopic}". Seçilen görsel teknik bir şema veya saha fotoğrafıdır. İçeriği bu görsele uygun yaz, görseldeki detaylara atıfta bulunabilirsin.` : ''}
+
     ${contextSummary ? `
     DAHA ÖNCE YAZILAN VE KESİNLEŞEN GÜNLER (Referans ve Bağlam İçin):
     ${contextSummary}

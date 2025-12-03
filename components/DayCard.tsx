@@ -238,14 +238,16 @@ export const DayCard: React.FC<DayCardProps> = ({
                  </button>
               )}
 
-              <button 
-                onClick={() => onRegenerate(day)}
-                disabled={day.isLoading || day.isImageLoading}
-                className="p-2 text-zinc-500 hover:text-zinc-200 hover:bg-zinc-800 rounded-lg transition-all border border-transparent"
-                title={isCompleted ? "Yeniden Yaz" : "İçeriği Oluştur"}
-              >
-                {day.isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
-              </button>
+              {isCompleted && (
+                <button 
+                  onClick={() => onRegenerate(day)}
+                  disabled={day.isLoading || day.isImageLoading}
+                  className="p-2 text-zinc-500 hover:text-zinc-200 hover:bg-zinc-800 rounded-lg transition-all border border-transparent"
+                  title="Yeniden Yaz"
+                >
+                  {day.isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
+                </button>
+              )}
             </div>
           </div>
 
@@ -308,18 +310,68 @@ export const DayCard: React.FC<DayCardProps> = ({
                 <div className="w-12 h-12 rounded-full bg-zinc-800/50 border border-zinc-800 flex items-center justify-center mb-4">
                   <PenTool className="w-5 h-5 text-zinc-500" />
                 </div>
-                <div className="flex flex-col items-center gap-1 mb-4">
+                <div className="flex flex-col items-center gap-1 mb-6">
                   <span className="px-2 py-0.5 rounded text-[10px] font-mono bg-zinc-800 text-zinc-500 border border-zinc-700">GÖREV BEKLİYOR</span>
                   <span className="text-sm font-medium text-zinc-400 text-center max-w-xs">{day.specificTopic}</span>
                 </div>
-                <button 
-                  onClick={() => onRegenerate(day)}
-                  className="group/btn relative px-4 py-2 bg-zinc-100 text-zinc-900 rounded-lg text-sm font-semibold hover:bg-white transition-all overflow-hidden flex items-center gap-2"
-                >
-                  <span className="relative z-10">İçeriği Oluştur</span>
-                  <ChevronRight className="w-4 h-4 relative z-10 group-hover/btn:translate-x-0.5 transition-transform" />
-                  <div className="absolute inset-0 bg-gradient-to-r from-blue-400 to-blue-600 opacity-0 group-hover/btn:opacity-10 transition-opacity" />
-                </button>
+
+                {/* Workflow Logic: Visual First */}
+                {day.hasVisual && !day.imageUrl ? (
+                  <div className="flex flex-col items-center gap-3 w-full max-w-xs animate-in fade-in slide-in-from-bottom-2">
+                    <p className="text-xs text-purple-400 font-medium bg-purple-500/10 px-3 py-1.5 rounded-full border border-purple-500/20 mb-1">
+                      Bu gün için önce görsel seçmelisiniz
+                    </p>
+                    <button 
+                      onClick={() => onSearchImage(day)}
+                      disabled={day.isImageLoading}
+                      className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-purple-600 text-white rounded-xl text-sm font-bold hover:bg-purple-500 transition-all shadow-lg shadow-purple-900/20"
+                    >
+                      {day.isImageLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <ImageIcon className="w-4 h-4" />}
+                      Görsel Ara ve Seç
+                    </button>
+                    <button 
+                       disabled
+                       className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-zinc-800 text-zinc-500 rounded-xl text-sm font-semibold cursor-not-allowed border border-zinc-700"
+                    >
+                      İçeriği Oluştur
+                    </button>
+                  </div>
+                ) : (
+                  <div className="flex flex-col items-center gap-3 w-full max-w-xs animate-in fade-in slide-in-from-bottom-2">
+                     {day.imageUrl && (
+                        <div className="relative group/img mb-2">
+                           <img 
+                              src={day.imageUrl} 
+                              alt="Seçilen Referans" 
+                              className="w-20 h-20 object-cover rounded-lg border-2 border-purple-500/50 shadow-lg shadow-purple-900/20" 
+                           />
+                           <button 
+                             onClick={() => onSearchImage(day)}
+                             className="absolute -top-2 -right-2 bg-zinc-800 text-zinc-300 p-1 rounded-full border border-zinc-600 hover:text-white hover:bg-zinc-700 shadow-md"
+                             title="Görseli Değiştir"
+                           >
+                              <RefreshCw className="w-3 h-3" />
+                           </button>
+                        </div>
+                     )}
+
+                    <button 
+                      onClick={() => onRegenerate(day)}
+                      disabled={day.isLoading}
+                      className="group/btn relative w-full px-4 py-3 bg-zinc-100 text-zinc-900 rounded-xl text-sm font-bold hover:bg-white transition-all overflow-hidden flex items-center justify-center gap-2 shadow-lg shadow-white/5"
+                    >
+                      {day.isLoading ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <>
+                           <span className="relative z-10">İçeriği Oluştur</span>
+                           <ChevronRight className="w-4 h-4 relative z-10 group-hover/btn:translate-x-0.5 transition-transform" />
+                        </>
+                      )}
+                      <div className="absolute inset-0 bg-gradient-to-r from-blue-400 to-blue-600 opacity-0 group-hover/btn:opacity-10 transition-opacity" />
+                    </button>
+                  </div>
+                )}
               </div>
             )}
           </div>

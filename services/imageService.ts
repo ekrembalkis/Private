@@ -1,3 +1,4 @@
+
 export const searchImages = async (topic: string, count: number = 15): Promise<string[]> => {
   const apiKey = process.env.GOOGLE_SEARCH_API_KEY;
   const cseId = process.env.GOOGLE_CSE_ID;
@@ -7,7 +8,8 @@ export const searchImages = async (topic: string, count: number = 15): Promise<s
     return [];
   }
 
-  const searchQuery = `${topic} elektrik mühendisliği eğitim tablo şema diagram`;
+  // Değişiklik: Arama sorgusu güncellendi
+  const searchQuery = `${topic} elektrik tesisat şema teknik çizim diagram`;
 
   try {
     // Google API max 10 sonuç döndürür, 15 için 2 istek yapacağız

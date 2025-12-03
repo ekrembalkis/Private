@@ -95,6 +95,12 @@ const App: React.FC = () => {
   }, []);
 
   const handleRegenerate = async (day: DayEntry) => {
+    // Guard: If day has visual but no image URL is selected, prevent generation
+    if (day.hasVisual && !day.imageUrl) {
+        alert("Lütfen içerik oluşturmadan önce bir görsel seçin.");
+        return;
+    }
+
     // Set Loading State
     const updatedDays = days.map(d => d.dayNumber === day.dayNumber ? { ...d, isLoading: true } : d);
     setDays(updatedDays);
@@ -118,8 +124,8 @@ const App: React.FC = () => {
            };
         }
         return d;
-      });
-      setDays(finalDays);
+    });
+    setDays(finalDays);
     } catch (error) {
       console.error("Error regenerating day:", error);
       const errorDays = days.map(d => d.dayNumber === day.dayNumber ? { ...d, isLoading: false } : d);
