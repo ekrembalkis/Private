@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { generateDayList } from './utils/dateUtils';
 import { DayEntry, InternshipType } from './types';
@@ -22,6 +21,7 @@ const App: React.FC = () => {
   const [imageSearchResults, setImageSearchResults] = useState<string[]>([]);
   const [imagePickerDay, setImagePickerDay] = useState<DayEntry | null>(null);
   const [isSearchingImages, setIsSearchingImages] = useState(false);
+  const [selectedImageType, setSelectedImageType] = useState<string>('autocad');
   const exportMenuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -135,15 +135,19 @@ const App: React.FC = () => {
   };
 
 
-const handleOpenImagePicker = async (day: DayEntry) => {
+  const handleOpenImagePicker = async (day: DayEntry) => {
     setImagePickerDay(day);
     setShowImagePicker(true);
-    setIsSearchingImages(true);
     setImageSearchResults([]);
+    setIsSearchingImages(false);
+  };
 
+  const handleSearchWithType = async (imageType: string) => {
+    if (!imagePickerDay) return;
+    setIsSearchingImages(true);
+    
     try {
-      const searchQuery = day.specificTopic;
-      const images = await searchImages(searchQuery, 15);
+      const images = await searchImages(imagePickerDay.specificTopic, 15, imageType);
       setImageSearchResults(images);
     } catch (err) {
       console.error("Image Search Error", err);
@@ -521,23 +525,50 @@ const handleOpenImagePicker = async (day: DayEntry) => {
             </div>
             
             <div className="flex-1 overflow-y-auto p-4">
+              {!isSearchingImages && imageSearchResults.length === 0 && (
+                <div className="p-4 space-y-4">
+                  <p className="text-sm text-zinc-400 text-center">Aramak istediğiniz görsel tipini seçin:</p>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <button
+                      onClick={() => { setSelectedImageType('autocad'); handleSearchWithType('autocad'); }}
+                      className="p-6 bg-zinc-800 hover:bg-zinc-700 hover:border-blue-500 rounded-xl border border-zinc-700 text-center transition-all group"
+                    >
+                      <span className="text-3xl block mb-3 group-hover:scale-110 transition-transform">📐</span>
+                      <p className="font-bold text-zinc-200">AutoCAD / Proje</p>
+                      <p className="text-[10px] text-zinc-500 mt-1">Teknik çizim, DWG, plan</p>
+                    </button>
+                    <button
+                      onClick={() => { setSelectedImageType('saha'); handleSearchWithType('saha'); }}
+                      className="p-6 bg-zinc-800 hover:bg-zinc-700 hover:border-amber-500 rounded-xl border border-zinc-700 text-center transition-all group"
+                    >
+                      <span className="text-3xl block mb-3 group-hover:scale-110 transition-transform">🔧</span>
+                      <p className="font-bold text-zinc-200">Saha Fotoğrafı</p>
+                      <p className="text-[10px] text-zinc-500 mt-1">Montaj, kurulum, şantiye</p>
+                    </button>
+                    <button
+                      onClick={() => { setSelectedImageType('tablo'); handleSearchWithType('tablo'); }}
+                      className="p-6 bg-zinc-800 hover:bg-zinc-700 hover:border-purple-500 rounded-xl border border-zinc-700 text-center transition-all group"
+                    >
+                      <span className="text-3xl block mb-3 group-hover:scale-110 transition-transform">📊</span>
+                      <p className="font-bold text-zinc-200">Eğitim / Şema</p>
+                      <p className="text-[10px] text-zinc-500 mt-1">Diyagram, tablo, pano şeması</p>
+                    </button>
+                  </div>
+                </div>
+              )}
+
               {isSearchingImages ? (
                 <div className="flex flex-col items-center justify-center py-12">
                   <Loader2 className="w-8 h-8 text-blue-500 animate-spin mb-3" />
                   <p className="text-zinc-400">Görseller aranıyor...</p>
                 </div>
-              ) : imageSearchResults.length === 0 ? (
-                <div className="flex flex-col items-center justify-center py-12 text-zinc-500">
-                  <AlertTriangle className="w-8 h-8 mb-3 opacity-50" />
-                  <p>Görsel bulunamadı</p>
-                </div>
-              ) : (
+              ) : imageSearchResults.length > 0 ? (
                 <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-3">
                   {imageSearchResults.map((img, index) => (
                     <button
                       key={index}
                       onClick={() => handleSelectImage(img)}
-                      className="aspect-square rounded-lg overflow-hidden border-2 border-transparent hover:border-blue-500 transition-all hover:scale-105 bg-zinc-800"
+                      className="aspect-square rounded-lg overflow-hidden border-2 border-transparent hover:border-blue-500 transition-all hover:scale-105 bg-zinc-800 relative group"
                     >
                       <img 
                         src={img} 
@@ -545,10 +576,22 @@ const handleOpenImagePicker = async (day: DayEntry) => {
                         className="w-full h-full object-cover"
                         onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
                       />
+                      <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                         <span className="text-xs font-bold text-white bg-black/50 px-2 py-1 rounded">Seç</span>
+                      </div>
                     </button>
                   ))}
+                  
+                  {/* Reset Search Button */}
+                   <button
+                      onClick={() => setImageSearchResults([])}
+                      className="aspect-square rounded-lg border-2 border-dashed border-zinc-700 hover:border-zinc-500 hover:bg-zinc-800 transition-all flex flex-col items-center justify-center text-zinc-500"
+                    >
+                      <RotateCcw className="w-6 h-6 mb-2" />
+                      <span className="text-xs">Tekrar Ara</span>
+                    </button>
                 </div>
-              )}
+              ) : null}
             </div>
           </div>
         </div>

@@ -1,5 +1,5 @@
 
-export const searchImages = async (topic: string, count: number = 15): Promise<string[]> => {
+export const searchImages = async (topic: string, count: number = 15, imageType: string = 'autocad'): Promise<string[]> => {
   const apiKey = process.env.GOOGLE_SEARCH_API_KEY;
   const cseId = process.env.GOOGLE_CSE_ID;
 
@@ -8,8 +8,21 @@ export const searchImages = async (topic: string, count: number = 15): Promise<s
     return [];
   }
 
-  // Değişiklik: Arama sorgusu güncellendi
-  const searchQuery = `${topic} elektrik tesisat şema teknik çizim diagram`;
+  // Görsel tipine göre arama sorgusu
+  let searchQuery = '';
+  switch(imageType) {
+    case 'autocad':
+      searchQuery = `${topic} AutoCAD elektrik projesi teknik çizim dwg`;
+      break;
+    case 'saha':
+      searchQuery = `${topic} elektrik tesisatı montaj kurulum saha`;
+      break;
+    case 'tablo':
+      searchQuery = `${topic} elektrik eğitim tablosu şema diyagram`;
+      break;
+    default:
+      searchQuery = `${topic} elektrik proje çizim`;
+  }
 
   try {
     // Google API max 10 sonuç döndürür, 15 için 2 istek yapacağız

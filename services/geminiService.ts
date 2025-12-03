@@ -74,10 +74,21 @@ export const generateDayContent = async (day: DayEntry, previousDays: DayEntry[]
     ${day.imageUrl && day.imageAnalysis ? `
 SEÇİLEN GÖRSEL ANALİZİ: ${day.imageAnalysis}
 
-ÖNEMLİ: İçeriği yazarken bu görsel analizini dikkate al. 
-- Eğer görsel bir proje çizimi veya teknik şema ise, içerikte "projeyi inceledik, çizimi analiz ettik" gibi ifadeler kullan.
-- Eğer görsel bir saha fotoğrafı ise, sahada yapılan işleri anlat.
-- Görselde ne varsa ona uygun içerik yaz, görselde olmayan işlemleri anlatma.
+KRİTİK KURALLAR:
+1. Eğer görsel bir proje çizimi veya AutoCAD çıktısı ise:
+   - SADECE "projeyi inceledik", "çizimi analiz ettik", "güzergahları belirledik" gibi ifadeler kullan
+   - KESİNLİKLE montaj, kurulum, kablo çekme gibi saha işlerinden bahsetme
+   - Çizim üzerinde gördüklerini anlat (hatlar, semboller, ölçüler)
+
+2. Eğer görsel bir saha fotoğrafı ise:
+   - Sahada yapılan fiziksel işleri anlat
+   - Montaj, kurulum, bağlantı işlemlerini detaylandır
+
+3. Eğer görsel bir eğitim tablosu veya şema ise:
+   - Eğitim aldığımızı, tablo/şemayı incelediğimizi anlat
+   - Teorik bilgi öğrendiğimizi vurgula
+
+ASLA görselde olmayan işlemleri anlatma. Görselde proje çizimi varsa saha işi anlatma!
 ` : ''}
 
     ${contextSummary ? `
