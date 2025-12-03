@@ -1,38 +1,45 @@
-export const searchImage = async (topic: string): Promise<string | null> => {
+export const searchImages = async (topic: string, count: number = 15): Promise<string[]> => {
   const apiKey = process.env.GOOGLE_SEARCH_API_KEY;
   const cseId = process.env.GOOGLE_CSE_ID;
 
   if (!apiKey || !cseId) {
     console.error("Google Search API key or CSE ID is missing");
-    return null;
+    return [];
   }
 
-  // Elektrik mühendisliği staj konularına uygun arama sorgusu oluştur
-  const searchQuery = `${topic} elektrik mühendisliği eğitim tablo şema`;
+  const searchQuery = `${topic} elektrik mühendisliği eğitim tablo şema diagram`;
 
   try {
-    const response = await fetch(
-      `https://www.googleapis.com/customsearch/v1?key=${apiKey}&cx=${cseId}&q=${encodeURIComponent(searchQuery)}&searchType=image&num=5&safe=active&imgType=photo`
+    // Google API max 10 sonuç döndürür, 15 için 2 istek yapacağız
+    const results: string[] = [];
+    
+    // İlk 10 sonuç
+    const response1 = await fetch(
+      `https://www.googleapis.com/customsearch/v1?key=${apiKey}&cx=${cseId}&q=${encodeURIComponent(searchQuery)}&searchType=image&num=10&safe=active&imgType=photo`
     );
-
-    if (!response.ok) {
-      console.error("Google Search API error:", response.status);
-      return null;
+    
+    if (response1.ok) {
+      const data1 = await response1.json();
+      if (data1.items) {
+        results.push(...data1.items.map((item: any) => item.link));
+      }
     }
 
-    const data = await response.json();
-
-    if (data.items && data.items.length > 0) {
-      // Rastgele bir görsel seç (ilk 5'ten)
-      const randomIndex = Math.floor(Math.random() * Math.min(5, data.items.length));
-      return data.items[randomIndex].link;
+    // Sonraki 5 sonuç
+    const response2 = await fetch(
+      `https://www.googleapis.com/customsearch/v1?key=${apiKey}&cx=${cseId}&q=${encodeURIComponent(searchQuery)}&searchType=image&num=5&start=11&safe=active&imgType=photo`
+    );
+    
+    if (response2.ok) {
+      const data2 = await response2.json();
+      if (data2.items) {
+        results.push(...data2.items.map((item: any) => item.link));
+      }
     }
 
-    return null;
+    return results.slice(0, count);
   } catch (error) {
     console.error("Image search error:", error);
-    return null;
+    return [];
   }
 };
-
-// Eski fonksiyon kaldırıldı, artık sadece searchImage kullanılıyor

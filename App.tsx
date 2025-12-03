@@ -4,10 +4,10 @@ import { generateDayList } from './utils/dateUtils';
 import { DayEntry, InternshipType } from './types';
 import { Stats } from './components/Stats';
 import { DayCard } from './components/DayCard';
-import { generateDayContent, generateImagePrompt } from './services/geminiService';
-import { searchImage } from './services/imageService';
+import { generateDayContent } from './services/geminiService';
+import { searchImages } from './services/imageService';
 import { saveDayToFirestore, loadAllDaysFromFirestore, deleteDayFromFirestore, savePlanToFirestore, loadPlanFromFirestore, resetFirestoreData } from './services/firebaseService';
-import { Wand2, Download, AlertTriangle, Terminal, FileText, FileType, ChevronDown, CheckCircle2, RotateCcw, Trash2, X } from 'lucide-react';
+import { Wand2, Download, AlertTriangle, Terminal, FileText, FileType, ChevronDown, CheckCircle2, RotateCcw, Trash2, X, Loader2 } from 'lucide-react';
 import { STUDENT_INFO, COMPANY_INFO } from './constants';
 import { Document, Packer, Paragraph, TextRun, HeadingLevel, AlignmentType, ImageRun } from 'docx';
 
@@ -18,6 +18,10 @@ const App: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [showExportMenu, setShowExportMenu] = useState(false);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const [showImagePicker, setShowImagePicker] = useState(false);
+  const [imageSearchResults, setImageSearchResults] = useState<string[]>([]);
+  const [imagePickerDay, setImagePickerDay] = useState<DayEntry | null>(null);
+  const [isSearchingImages, setIsSearchingImages] = useState(false);
   const exportMenuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -124,58 +128,45 @@ const App: React.FC = () => {
     }
   };
 
-const handleGenerateAIImage = async (day: DayEntry) => {
-    const promptDescription = day.visualDescription 
-      ? day.visualDescription 
-      : `Elektrik mühendisliği staj ortamında: ${day.specificTopic}`;
-      
-    const imagePrompt = generateImagePrompt(promptDescription);
+
+const handleOpenImagePicker = async (day: DayEntry) => {
+    setImagePickerDay(day);
+    setShowImagePicker(true);
+    setIsSearchingImages(true);
+    setImageSearchResults([]);
+
+    try {
+      const searchQuery = day.specificTopic;
+      const images = await searchImages(searchQuery, 15);
+      setImageSearchResults(images);
+    } catch (err) {
+      console.error("Image Search Error", err);
+    } finally {
+      setIsSearchingImages(false);
+    }
+  };
+
+  const handleSelectImage = (imageUrl: string) => {
+    if (!imagePickerDay) return;
 
     const finalDays = days.map(d => {
-      if (d.dayNumber === day.dayNumber) {
-          const updatedDay = { 
-              ...d, 
-              imagePrompt: imagePrompt,
-              isImageLoading: false 
-          };
-          if (d.isSaved) {
-              saveDayToFirestore(updatedDay);
-          }
-          return updatedDay;
+      if (d.dayNumber === imagePickerDay.dayNumber) {
+        const updatedDay = { 
+          ...d, 
+          imageUrl: imageUrl,
+          imageSource: 'stock' as const,
+        };
+        if (d.isSaved) {
+          saveDayToFirestore(updatedDay);
+        }
+        return updatedDay;
       }
       return d;
     });
     setDays(finalDays);
-  };
-
-const handleSearchImage = async (day: DayEntry) => {
-    const updatedDays = days.map(d => d.dayNumber === day.dayNumber ? { ...d, isImageLoading: true } : d);
-    setDays(updatedDays);
-
-    try {
-      const searchQuery = day.specificTopic;
-      const imageUrl = await searchImage(searchQuery);
-
-      const finalDays = days.map(d => {
-        if (d.dayNumber === day.dayNumber) {
-            const updatedDay = { 
-                ...d, 
-                imageUrl: imageUrl || undefined, 
-                imageSource: 'stock' as const,
-                isImageLoading: false 
-            };
-            if (d.isSaved) {
-                saveDayToFirestore(updatedDay);
-            }
-            return updatedDay;
-        }
-        return d;
-      });
-      setDays(finalDays);
-    } catch (err) {
-      console.error("Image Search Error", err);
-      setDays(days.map(d => d.dayNumber === day.dayNumber ? { ...d, isImageLoading: false } : d));
-    }
+    setShowImagePicker(false);
+    setImagePickerDay(null);
+    setImageSearchResults([]);
   };
 
   const handleSave = async (day: DayEntry) => {
@@ -479,8 +470,7 @@ const handleSearchImage = async (day: DayEntry) => {
                                 onSave={handleSave}
                                 onDelete={handleDelete}
                                 onUpdatePlan={handleUpdatePlan}
-                                onGenerateAIImage={handleGenerateAIImage}
-                                onSearchImage={handleSearchImage}
+                                onSearchImage={handleOpenImagePicker}
                                 onImageClick={setSelectedImage}
                             />
                         ))}
@@ -496,6 +486,58 @@ const handleSearchImage = async (day: DayEntry) => {
             </div>
         </div>
       </main>
+
+
+{/* Image Picker Modal */}
+      {showImagePicker && (
+        <div className="fixed inset-0 z-50 bg-black/95 backdrop-blur-md flex items-center justify-center p-4 animate-fade-in">
+          <div className="bg-zinc-900 border border-zinc-800 rounded-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col">
+            <div className="p-4 border-b border-zinc-800 flex items-center justify-between">
+              <div>
+                <h3 className="text-lg font-bold text-white">Görsel Seç</h3>
+                <p className="text-sm text-zinc-500">Gün {imagePickerDay?.dayNumber}: {imagePickerDay?.specificTopic}</p>
+              </div>
+              <button 
+                onClick={() => { setShowImagePicker(false); setImagePickerDay(null); setImageSearchResults([]); }}
+                className="p-2 text-zinc-400 hover:text-white hover:bg-zinc-800 rounded-lg transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            
+            <div className="flex-1 overflow-y-auto p-4">
+              {isSearchingImages ? (
+                <div className="flex flex-col items-center justify-center py-12">
+                  <Loader2 className="w-8 h-8 text-blue-500 animate-spin mb-3" />
+                  <p className="text-zinc-400">Görseller aranıyor...</p>
+                </div>
+              ) : imageSearchResults.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-12 text-zinc-500">
+                  <AlertTriangle className="w-8 h-8 mb-3 opacity-50" />
+                  <p>Görsel bulunamadı</p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-3">
+                  {imageSearchResults.map((img, index) => (
+                    <button
+                      key={index}
+                      onClick={() => handleSelectImage(img)}
+                      className="aspect-square rounded-lg overflow-hidden border-2 border-transparent hover:border-blue-500 transition-all hover:scale-105 bg-zinc-800"
+                    >
+                      <img 
+                        src={img} 
+                        alt={`Seçenek ${index + 1}`}
+                        className="w-full h-full object-cover"
+                        onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                      />
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Lightbox / Image Viewer */}
       {selectedImage && (

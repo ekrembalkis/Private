@@ -1,5 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { DayEntry, InternshipType } from '../types';
 import { RefreshCw, Camera, PenTool, Loader2, Calendar, ChevronRight, Save, CheckCircle2, CloudUpload, Trash2, Copy, Check, Pencil, X, ChevronDown, ImagePlus, Sparkles, Image as ImageIcon } from 'lucide-react';
 import { PRODUCTION_TOPICS, MANAGEMENT_TOPICS } from '../constants';
@@ -10,7 +11,6 @@ interface DayCardProps {
   onSave: (day: DayEntry) => Promise<void>;
   onDelete: (day: DayEntry) => Promise<void>;
   onUpdatePlan: (day: DayEntry, newType: InternshipType, newTopic: string, customPrompt: string) => Promise<void>;
-  onGenerateAIImage: (day: DayEntry) => Promise<void>;
   onSearchImage: (day: DayEntry) => Promise<void>;
   onImageClick: (imageUrl: string) => void;
   isLast: boolean;
@@ -22,7 +22,6 @@ export const DayCard: React.FC<DayCardProps> = ({
   onSave, 
   onDelete, 
   onUpdatePlan, 
-  onGenerateAIImage,
   onSearchImage,
   onImageClick,
   isLast 
@@ -266,71 +265,39 @@ export const DayCard: React.FC<DayCardProps> = ({
                      <div className="absolute left-0 top-0 bottom-0 w-1 bg-purple-500/50"></div>
                      
                      <div className="flex flex-col gap-4">
-                        <div className="flex items-center justify-between">
-                           <h4 className="text-xs font-bold text-purple-400 uppercase tracking-wide flex items-center gap-1.5">
-                             <Camera className="w-3.5 h-3.5" /> 
-                             {day.imagePrompt ? 'Görsel Prompt (Nano Banana Pro)' : day.imageUrl ? 'Stok Görsel' : 'Görsel Oluştur'}
-                           </h4>
-                        </div>
+                        <h4 className="text-xs font-bold text-purple-400 uppercase tracking-wide flex items-center gap-1.5">
+                          <Camera className="w-3.5 h-3.5" /> 
+                          {day.imageUrl ? 'Seçilen Görsel' : 'Görsel Seç'}
+                        </h4>
                         
-                        {day.imagePrompt ? (
-                          <div className="space-y-3">
-                            <div className="bg-zinc-900 border border-zinc-700 rounded-lg p-3">
-                              <p className="text-sm text-zinc-300 font-mono break-words select-all">
-                                {day.imagePrompt}
-                              </p>
-                            </div>
-                            <div className="flex gap-2">
-                              <button 
-                                onClick={async () => {
-                                  await navigator.clipboard.writeText(day.imagePrompt || '');
-                                }}
-                                className="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-purple-600 hover:bg-purple-500 text-white text-xs font-medium transition-all"
-                              >
-                                <Copy className="w-3 h-3" />
-                                Kopyala
-                              </button>
-                              <button 
-                                onClick={() => onSearchImage(day)}
-                                disabled={day.isImageLoading}
-                                className="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-xs font-medium border border-zinc-700 transition-all"
-                              >
-                                {day.isImageLoading ? <Loader2 className="w-3 h-3 animate-spin" /> : <ImageIcon className="w-3 h-3" />}
-                                Stok Görsel
-                              </button>
-                            </div>
-                          </div>
-                        ) : day.imageUrl ? (
+                        {day.imageUrl ? (
                           <div className="flex items-center gap-4">
                             <img 
                               src={day.imageUrl} 
-                              alt="Stock Visual" 
+                              alt="Seçilen Görsel" 
                               className="w-24 h-24 object-cover rounded-lg border border-zinc-700 cursor-pointer hover:opacity-80 transition-opacity"
                               onClick={() => onImageClick(day.imageUrl!)}
                             />
-                            <p className="text-sm text-zinc-500 italic flex-1">
-                              "{day.visualDescription}"
-                            </p>
+                            <div className="flex-1">
+                              <p className="text-sm text-zinc-400 mb-2">Görsel seçildi</p>
+                              <button 
+                                onClick={() => onSearchImage(day)}
+                                className="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-xs font-medium border border-zinc-700 transition-all"
+                              >
+                                <ImageIcon className="w-3 h-3" />
+                                Değiştir
+                              </button>
+                            </div>
                           </div>
                         ) : (
-                          <div className="flex gap-3">
-                            <button 
-                              onClick={() => onGenerateAIImage(day)}
-                              disabled={day.isImageLoading}
-                              className="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-zinc-800 hover:bg-purple-900/20 hover:text-purple-300 text-zinc-400 text-xs font-medium border border-zinc-700 hover:border-purple-500/30 transition-all"
-                            >
-                              {day.isImageLoading ? <Loader2 className="w-3 h-3 animate-spin" /> : <Sparkles className="w-3 h-3 text-purple-500" />}
-                              Prompt Oluştur
-                            </button>
-                            <button 
-                              onClick={() => onSearchImage(day)}
-                              disabled={day.isImageLoading}
-                              className="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-zinc-800 hover:bg-blue-900/20 hover:text-blue-300 text-zinc-400 text-xs font-medium border border-zinc-700 hover:border-blue-500/30 transition-all"
-                            >
-                              {day.isImageLoading ? <Loader2 className="w-3 h-3 animate-spin" /> : <ImageIcon className="w-3 h-3 text-blue-500" />}
-                              Stok Fotoğraf
-                            </button>
-                          </div>
+                          <button 
+                            onClick={() => onSearchImage(day)}
+                            disabled={day.isImageLoading}
+                            className="flex items-center justify-center gap-2 py-3 px-4 rounded-lg bg-purple-600 hover:bg-purple-500 text-white text-sm font-medium transition-all w-full"
+                          >
+                            {day.isImageLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <ImageIcon className="w-4 h-4" />}
+                            Görsel Seç
+                          </button>
                         )}
                      </div>
                   </div>
@@ -366,9 +333,9 @@ export const DayCard: React.FC<DayCardProps> = ({
             </div>
           )}
 
-          {showDeleteConfirm && (
-             <div className="absolute inset-0 bg-zinc-950/90 backdrop-blur-sm z-30 flex items-center justify-center p-4">
-                <div className="bg-zinc-900 border border-zinc-800 p-6 rounded-xl shadow-2xl max-w-sm w-full text-center animate-fade-in">
+          {showDeleteConfirm && createPortal(
+             <div className="fixed inset-0 bg-zinc-950/90 backdrop-blur-sm z-[100] flex items-center justify-center p-4 animate-in fade-in duration-200">
+                <div className="bg-zinc-900 border border-zinc-800 p-6 rounded-xl shadow-2xl max-w-sm w-full text-center relative">
                     <div className="w-12 h-12 bg-red-500/10 rounded-full flex items-center justify-center mx-auto mb-4 border border-red-500/20">
                         <Trash2 className="w-6 h-6 text-red-500" />
                     </div>
@@ -392,12 +359,13 @@ export const DayCard: React.FC<DayCardProps> = ({
                         </button>
                     </div>
                 </div>
-             </div>
+             </div>,
+             document.body
           )}
 
-           {isEditing && (
-              <div className="absolute inset-0 bg-zinc-950/95 backdrop-blur-sm z-30 flex items-center justify-center p-4">
-                 <div className="bg-zinc-900 border border-zinc-700 p-6 rounded-xl shadow-2xl max-w-lg w-full text-left animate-fade-in relative">
+           {isEditing && createPortal(
+              <div className="fixed inset-0 bg-zinc-950/80 backdrop-blur-sm z-[100] flex items-center justify-center p-4 animate-in fade-in duration-200">
+                 <div className="bg-zinc-900 border border-zinc-700 p-6 rounded-xl shadow-2xl max-w-md w-full text-left relative">
                     <button onClick={() => setIsEditing(false)} className="absolute top-4 right-4 text-zinc-500 hover:text-white">
                         <X className="w-5 h-5" />
                     </button>
@@ -407,7 +375,7 @@ export const DayCard: React.FC<DayCardProps> = ({
                         Planı Düzenle
                     </h3>
 
-                    <div className="space-y-6">
+                    <div className="space-y-4">
                         <div className="space-y-2">
                             <label className="text-xs font-bold text-zinc-500 uppercase tracking-wide">Staj Türü</label>
                             <div className="flex gap-3">
@@ -455,9 +423,9 @@ export const DayCard: React.FC<DayCardProps> = ({
                              <textarea
                                 value={editCustomPrompt}
                                 onChange={(e) => setEditCustomPrompt(e.target.value)}
-                                placeholder="Örn: Bu gün 3 fazlı pano montajı yaptık, kablolama işlemleri tamamlandı..."
+                                placeholder="Örn: Bugün 3 fazlı pano montajı yaptık..."
                                 className="w-full bg-zinc-950 border border-zinc-800 rounded-lg py-3 px-4 text-sm text-zinc-300 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 resize-none"
-                                rows={3}
+                                rows={2}
                              />
                              <p className="text-xs text-zinc-600">Bu direktif AI'ın içerik yazarken rehber olarak kullanacağı ek bilgidir</p>
                         </div>
@@ -478,7 +446,8 @@ export const DayCard: React.FC<DayCardProps> = ({
                         </button>
                     </div>
                  </div>
-              </div>
+              </div>,
+              document.body
            )}
         </div>
       </div>
