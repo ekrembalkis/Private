@@ -23,10 +23,11 @@ export const generateDayContent = async (day: DayEntry, previousDays: DayEntry[]
     .map(d => `- Gün ${d.dayNumber}: ${d.workTitle || d.specificTopic}`)
     .join('\n');
   
-  const userPrompt = `
+ const userPrompt = `
     Tarih: ${day.date} (Gün ${day.dayNumber})
     Staj Türü: ${day.type}
     GÜNÜN SPESİFİK GÖREVİ: ${day.specificTopic}
+    ${day.customPrompt ? `ÖZEL DİREKTİF: ${day.customPrompt}` : ''}
     Görsel İsteği: ${day.hasVisual ? 'Evet' : 'Hayır'}
     
     ${contextSummary ? `

@@ -8,7 +8,8 @@ export interface DayEntry {
   dayNumber: number;
   date: string; // DD.MM.YYYY
   type: InternshipType;
-  specificTopic: string; // Günün spesifik konusu (Prompt girdisi)
+  specificTopic: string;
+  customPrompt?: string;
   workTitle?: string; // Oluşturulan kısa başlık (Çalışma Raporu çıktısı)
   content: string;
   isGenerated: boolean;

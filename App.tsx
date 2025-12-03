@@ -198,7 +198,7 @@ const handleSearchImage = async (day: DayEntry) => {
     }
   };
 
-  const handleUpdatePlan = async (day: DayEntry, newType: InternshipType, newTopic: string) => {
+  const handleUpdatePlan = async (day: DayEntry, newType: InternshipType, newTopic: string, customPrompt: string) => {
     // Update local state
     const updatedDays = days.map(d => {
         if (d.dayNumber === day.dayNumber) {
@@ -206,6 +206,7 @@ const handleSearchImage = async (day: DayEntry) => {
                 ...d,
                 type: newType,
                 specificTopic: newTopic,
+                customPrompt: customPrompt,
                 topic: newType === InternshipType.PRODUCTION_DESIGN 
                     ? 'Üretim/Tasarım/Saha Aktivitesi' 
                     : 'İşletme/Depo/Ofis Aktivitesi',

@@ -9,7 +9,7 @@ interface DayCardProps {
   onRegenerate: (day: DayEntry) => void;
   onSave: (day: DayEntry) => Promise<void>;
   onDelete: (day: DayEntry) => Promise<void>;
-  onUpdatePlan: (day: DayEntry, newType: InternshipType, newTopic: string) => Promise<void>;
+  onUpdatePlan: (day: DayEntry, newType: InternshipType, newTopic: string, customPrompt: string) => Promise<void>;
   onGenerateAIImage: (day: DayEntry) => Promise<void>;
   onSearchImage: (day: DayEntry) => Promise<void>;
   onImageClick: (imageUrl: string) => void;
@@ -36,12 +36,14 @@ export const DayCard: React.FC<DayCardProps> = ({
   const [isEditing, setIsEditing] = useState(false);
   const [editType, setEditType] = useState<InternshipType>(day.type);
   const [editTopic, setEditTopic] = useState<string>(day.specificTopic);
+  const [editCustomPrompt, setEditCustomPrompt] = useState<string>(day.customPrompt || '');
 
   // Sync state with props when day changes
   useEffect(() => {
     setEditType(day.type);
     setEditTopic(day.specificTopic);
-  }, [day.type, day.specificTopic]);
+    setEditCustomPrompt(day.customPrompt || '');
+  }, [day.type, day.specificTopic, day.customPrompt]);
 
   const isProduction = day.type === InternshipType.PRODUCTION_DESIGN;
   const isCompleted = day.isGenerated;
@@ -85,7 +87,7 @@ export const DayCard: React.FC<DayCardProps> = ({
 
   const handleSaveEdit = async () => {
     setIsEditing(false); 
-    await onUpdatePlan(day, editType, editTopic);
+    await onUpdatePlan(day, editType, editTopic, editCustomPrompt);
   };
 
   const handleTypeChange = (type: InternshipType) => {
@@ -446,6 +448,18 @@ export const DayCard: React.FC<DayCardProps> = ({
                                 </select>
                                 <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500 pointer-events-none" />
                              </div>
+                        </div>
+
+                        <div className="space-y-2">
+                             <label className="text-xs font-bold text-zinc-500 uppercase tracking-wide">Özel Direktif (Opsiyonel)</label>
+                             <textarea
+                                value={editCustomPrompt}
+                                onChange={(e) => setEditCustomPrompt(e.target.value)}
+                                placeholder="Örn: Bu gün 3 fazlı pano montajı yaptık, kablolama işlemleri tamamlandı..."
+                                className="w-full bg-zinc-950 border border-zinc-800 rounded-lg py-3 px-4 text-sm text-zinc-300 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 resize-none"
+                                rows={3}
+                             />
+                             <p className="text-xs text-zinc-600">Bu direktif AI'ın içerik yazarken rehber olarak kullanacağı ek bilgidir</p>
                         </div>
                     </div>
 
