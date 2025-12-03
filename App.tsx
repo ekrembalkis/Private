@@ -1,10 +1,11 @@
+
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { generateDayList } from './utils/dateUtils';
 import { DayEntry, InternshipType } from './types';
 import { Stats } from './components/Stats';
 import { DayCard } from './components/DayCard';
 import { generateDayContent, analyzeImage } from './services/geminiService';
-import { searchImages } from './services/imageService';
+import { searchImages, StockImage } from './services/imageService';
 import { saveDayToFirestore, loadAllDaysFromFirestore, deleteDayFromFirestore, savePlanToFirestore, loadPlanFromFirestore, resetFirestoreData } from './services/firebaseService';
 import { Wand2, Download, AlertTriangle, Terminal, FileText, FileType, ChevronDown, CheckCircle2, RotateCcw, Trash2, X, Loader2 } from 'lucide-react';
 import { STUDENT_INFO, COMPANY_INFO } from './constants';
@@ -18,7 +19,7 @@ const App: React.FC = () => {
   const [showExportMenu, setShowExportMenu] = useState(false);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [showImagePicker, setShowImagePicker] = useState(false);
-  const [imageSearchResults, setImageSearchResults] = useState<string[]>([]);
+  const [imageSearchResults, setImageSearchResults] = useState<StockImage[]>([]);
   const [imagePickerDay, setImagePickerDay] = useState<DayEntry | null>(null);
   const [isSearchingImages, setIsSearchingImages] = useState(false);
   const [selectedImageType, setSelectedImageType] = useState<string>('autocad');
@@ -567,12 +568,12 @@ const App: React.FC = () => {
                   {imageSearchResults.map((img, index) => (
                     <button
                       key={index}
-                      onClick={() => handleSelectImage(img)}
+                      onClick={() => handleSelectImage(img.url)}
                       className="aspect-square rounded-lg overflow-hidden border-2 border-transparent hover:border-blue-500 transition-all hover:scale-105 bg-zinc-800 relative group"
                     >
                       <img 
-                        src={img} 
-                        alt={`Seçenek ${index + 1}`}
+                        src={img.thumbUrl} 
+                        alt={img.title || `Seçenek ${index + 1}`}
                         className="w-full h-full object-cover"
                         onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
                       />
