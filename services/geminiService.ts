@@ -4,9 +4,9 @@ import { DayEntry } from '../types';
 
 // Initialize the API client
 const getAiClient = () => {
-  const apiKey = process.env.API_KEY;
+  const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) {
-    console.error("API Key is missing. Please set process.env.API_KEY");
+    console.error("API Key is missing. Please set GEMINI_API_KEY");
     throw new Error("Gemini API Key is missing");
   }
   return new GoogleGenAI({ apiKey });
@@ -48,8 +48,9 @@ export const generateDayContent = async (day: DayEntry, previousDays: DayEntry[]
   `;
 
   try {
+    // Permission denied hatalarını önlemek için gemini-2.5-flash kullanıyoruz
     const response = await ai.models.generateContent({
-      model: "gemini-3-pro-preview",
+      model: "gemini-2.5-flash",
       config: {
         systemInstruction: SYSTEM_PROMPT,
       },
@@ -94,33 +95,8 @@ export const generateDayContent = async (day: DayEntry, previousDays: DayEntry[]
   }
 };
 
-export const generateImage = async (description: string): Promise<string | null> => {
-  const ai = getAiClient();
+export const generateImagePrompt = (description: string): string => {
+  const prompt = `Realistic iPhone 13 photo, no filter, natural lighting. First person POV shot by an electrical engineering intern at workplace. Scene: ${description}. Not perfect stock photo quality, slightly imperfect, authentic textures, natural ambient light, casual snapshot feel. Turkish workplace environment.`;
   
-  // Prompt güncellendi: iPhone 13 doğallığı ve amatör çekim hissi
-  const prompt = `iPhone 13 kamerasıyla çekilmiş, filtresiz, doğal ve gerçekçi bir fotoğraf. Elektrik mühendisliği staj ortamı. POV açısı (birinci şahıs, stajyerin gözünden). Sahne: ${description}. Stok fotoğraf gibi mükemmel değil, hafif kusurlu, gerçekçi dokular, doğal ortam ışığı.`;
-
-  try {
-    // Model güncellendi: gemini-3-pro-image-preview (Nano Banana Pro)
-    const response = await ai.models.generateContent({
-      model: 'gemini-3-pro-image-preview',
-      contents: prompt,
-      config: {
-        // İsteğe bağlı olarak aspect ratio veya size ayarlanabilir, şimdilik varsayılan bırakıyoruz.
-        // imageConfig: { aspectRatio: "1:1" } 
-      }
-    });
-
-    if (response.candidates && response.candidates[0].content.parts) {
-        for (const part of response.candidates[0].content.parts) {
-            if (part.inlineData) {
-                return `data:${part.inlineData.mimeType};base64,${part.inlineData.data}`;
-            }
-        }
-    }
-    return null;
-  } catch (error) {
-    console.error("Image generation error:", error);
-    return null;
-  }
+  return prompt;
 };

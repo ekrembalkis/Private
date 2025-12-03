@@ -4,7 +4,7 @@ import { generateDayList } from './utils/dateUtils';
 import { DayEntry, InternshipType } from './types';
 import { Stats } from './components/Stats';
 import { DayCard } from './components/DayCard';
-import { generateDayContent, generateImage } from './services/geminiService';
+import { generateDayContent, generateImagePrompt } from './services/geminiService';
 import { searchStockImage } from './services/imageService';
 import { saveDayToFirestore, loadAllDaysFromFirestore, deleteDayFromFirestore, savePlanToFirestore, loadPlanFromFirestore, resetFirestoreData } from './services/firebaseService';
 import { Wand2, Download, AlertTriangle, Terminal, FileText, FileType, ChevronDown, CheckCircle2, RotateCcw, Trash2, X } from 'lucide-react';
@@ -124,40 +124,28 @@ const App: React.FC = () => {
     }
   };
 
-  const handleGenerateAIImage = async (day: DayEntry) => {
-    // Set Image Loading State
-    const updatedDays = days.map(d => d.dayNumber === day.dayNumber ? { ...d, isImageLoading: true } : d);
-    setDays(updatedDays);
+const handleGenerateAIImage = async (day: DayEntry) => {
+    const promptDescription = day.visualDescription 
+      ? day.visualDescription 
+      : `Elektrik mühendisliği staj ortamında: ${day.specificTopic}`;
+      
+    const imagePrompt = generateImagePrompt(promptDescription);
 
-    try {
-      // Use the visual description from Gemini if available, otherwise construct a prompt from the topic
-      const promptDescription = day.visualDescription 
-        ? day.visualDescription 
-        : `Elektrik mühendisliği staj ortamında: ${day.specificTopic}`;
-        
-      const imageUrl = await generateImage(promptDescription);
-
-      const finalDays = days.map(d => {
-        if (d.dayNumber === day.dayNumber) {
-            const updatedDay = { 
-                ...d, 
-                imageUrl: imageUrl || undefined, 
-                imageSource: 'ai' as const,
-                isImageLoading: false 
-            };
-            // If the day is already saved in DB, update it immediately
-            if (d.isSaved) {
-                saveDayToFirestore(updatedDay);
-            }
-            return updatedDay;
-        }
-        return d;
-      });
-      setDays(finalDays);
-    } catch (err) {
-      console.error("AI Image Gen Error", err);
-      setDays(days.map(d => d.dayNumber === day.dayNumber ? { ...d, isImageLoading: false } : d));
-    }
+    const finalDays = days.map(d => {
+      if (d.dayNumber === day.dayNumber) {
+          const updatedDay = { 
+              ...d, 
+              imagePrompt: imagePrompt,
+              isImageLoading: false 
+          };
+          if (d.isSaved) {
+              saveDayToFirestore(updatedDay);
+          }
+          return updatedDay;
+      }
+      return d;
+    });
+    setDays(finalDays);
   };
 
   const handleSearchStockImage = async (day: DayEntry) => {

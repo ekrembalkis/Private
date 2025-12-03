@@ -260,90 +260,76 @@ export const DayCard: React.FC<DayCardProps> = ({
                 </div>
                 
                 {day.hasVisual && (
-                  <div className="mt-6 p-4 bg-black/20 border border-zinc-800 rounded-xl relative overflow-hidden group/image">
+                  <div className="mt-6 p-4 bg-black/20 border border-zinc-800 rounded-xl relative overflow-hidden">
                      <div className="absolute left-0 top-0 bottom-0 w-1 bg-purple-500/50"></div>
                      
-                     <div className="flex flex-col sm:flex-row gap-4">
-                        <div className="flex-shrink-0 self-start sm:self-center relative">
-                           {/* Image Container */}
-                           <div className="w-16 h-16 sm:w-24 sm:h-24 rounded-lg bg-zinc-800 border border-zinc-700 p-1 flex items-center justify-center overflow-hidden relative">
-                             {day.isImageLoading ? (
-                               <Loader2 className="w-6 h-6 text-purple-500 animate-spin" />
-                             ) : day.imageUrl ? (
-                               <>
-                                 <img 
-                                   src={day.imageUrl} 
-                                   alt="Generated Visual" 
-                                   className="w-full h-full object-cover rounded cursor-zoom-in hover:scale-105 transition-transform duration-500"
-                                   onClick={() => onImageClick(day.imageUrl!)}
-                                 />
-                                 <div 
-                                    className="absolute inset-0 bg-black/60 opacity-0 group-hover/image:opacity-100 transition-opacity flex items-center justify-center backdrop-blur-[1px] cursor-pointer"
-                                 >
-                                    <div className="flex flex-col gap-2 pointer-events-auto">
-                                        <button 
-                                            onClick={(e) => { e.stopPropagation(); onGenerateAIImage(day); }}
-                                            className="p-1.5 bg-zinc-800 text-purple-400 hover:text-white rounded-md text-[10px] flex items-center gap-1 border border-zinc-700 hover:border-purple-500 transition-colors"
-                                            title="AI ile Yeniden Üret"
-                                        >
-                                            <Sparkles className="w-3 h-3" /> AI
-                                        </button>
-                                        <button 
-                                            onClick={(e) => { e.stopPropagation(); onSearchStockImage(day); }}
-                                            className="p-1.5 bg-zinc-800 text-blue-400 hover:text-white rounded-md text-[10px] flex items-center gap-1 border border-zinc-700 hover:border-blue-500 transition-colors"
-                                            title="Stok Fotoğraf Ara"
-                                        >
-                                            <ImageIcon className="w-3 h-3" /> Stok
-                                        </button>
-                                        <button 
-                                            onClick={() => onImageClick(day.imageUrl!)}
-                                            className="p-1.5 bg-zinc-800 text-zinc-400 hover:text-white rounded-md text-[10px] flex items-center justify-center gap-1 border border-zinc-700 hover:border-zinc-500 transition-colors"
-                                            title="Büyüt"
-                                        >
-                                            <Camera className="w-3 h-3" /> Aç
-                                        </button>
-                                    </div>
-                                 </div>
-                               </>
-                             ) : (
-                               <div className="flex flex-col items-center justify-center gap-2 w-full h-full">
-                                  <span className="text-zinc-600 text-[9px] text-center px-1">Görsel Seçimi</span>
-                               </div>
-                             )}
-                           </div>
-                        </div>
-
-                        <div className="flex-1 flex flex-col justify-center">
-                           <h4 className="text-xs font-bold text-purple-400 uppercase tracking-wide mb-1 flex items-center gap-1.5">
+                     <div className="flex flex-col gap-4">
+                        <div className="flex items-center justify-between">
+                           <h4 className="text-xs font-bold text-purple-400 uppercase tracking-wide flex items-center gap-1.5">
                              <Camera className="w-3.5 h-3.5" /> 
-                             {day.imageUrl ? (day.imageSource === 'stock' ? 'Stok Görsel' : 'AI Görsel') : 'Görsel Oluştur'}
+                             {day.imagePrompt ? 'Görsel Prompt (Nano Banana Pro)' : day.imageUrl ? 'Stok Görsel' : 'Görsel Oluştur'}
                            </h4>
-                           
-                           {day.imageUrl ? (
-                               <p className="text-sm text-zinc-500 italic line-clamp-2">
-                                 "{day.visualDescription}"
-                               </p>
-                           ) : (
-                               <div className="flex gap-3 mt-1">
-                                    <button 
-                                        onClick={() => onGenerateAIImage(day)}
-                                        disabled={day.isImageLoading}
-                                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-zinc-800 hover:bg-purple-900/20 hover:text-purple-300 text-zinc-400 text-xs font-medium border border-zinc-700 hover:border-purple-500/30 transition-all"
-                                    >
-                                        {day.isImageLoading ? <Loader2 className="w-3 h-3 animate-spin" /> : <Sparkles className="w-3 h-3 text-purple-500" />}
-                                        AI ile Oluştur
-                                    </button>
-                                    <button 
-                                        onClick={() => onSearchStockImage(day)}
-                                        disabled={day.isImageLoading}
-                                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-zinc-800 hover:bg-blue-900/20 hover:text-blue-300 text-zinc-400 text-xs font-medium border border-zinc-700 hover:border-blue-500/30 transition-all"
-                                    >
-                                        {day.isImageLoading ? <Loader2 className="w-3 h-3 animate-spin" /> : <ImageIcon className="w-3 h-3 text-blue-500" />}
-                                        Stok Fotoğraf Bul
-                                    </button>
-                               </div>
-                           )}
                         </div>
+                        
+                        {day.imagePrompt ? (
+                          <div className="space-y-3">
+                            <div className="bg-zinc-900 border border-zinc-700 rounded-lg p-3">
+                              <p className="text-sm text-zinc-300 font-mono break-words select-all">
+                                {day.imagePrompt}
+                              </p>
+                            </div>
+                            <div className="flex gap-2">
+                              <button 
+                                onClick={async () => {
+                                  await navigator.clipboard.writeText(day.imagePrompt || '');
+                                }}
+                                className="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-purple-600 hover:bg-purple-500 text-white text-xs font-medium transition-all"
+                              >
+                                <Copy className="w-3 h-3" />
+                                Kopyala
+                              </button>
+                              <button 
+                                onClick={() => onSearchStockImage(day)}
+                                disabled={day.isImageLoading}
+                                className="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-xs font-medium border border-zinc-700 transition-all"
+                              >
+                                {day.isImageLoading ? <Loader2 className="w-3 h-3 animate-spin" /> : <ImageIcon className="w-3 h-3" />}
+                                Stok Görsel
+                              </button>
+                            </div>
+                          </div>
+                        ) : day.imageUrl ? (
+                          <div className="flex items-center gap-4">
+                            <img 
+                              src={day.imageUrl} 
+                              alt="Stock Visual" 
+                              className="w-24 h-24 object-cover rounded-lg border border-zinc-700 cursor-pointer hover:opacity-80 transition-opacity"
+                              onClick={() => onImageClick(day.imageUrl!)}
+                            />
+                            <p className="text-sm text-zinc-500 italic flex-1">
+                              "{day.visualDescription}"
+                            </p>
+                          </div>
+                        ) : (
+                          <div className="flex gap-3">
+                            <button 
+                              onClick={() => onGenerateAIImage(day)}
+                              disabled={day.isImageLoading}
+                              className="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-zinc-800 hover:bg-purple-900/20 hover:text-purple-300 text-zinc-400 text-xs font-medium border border-zinc-700 hover:border-purple-500/30 transition-all"
+                            >
+                              {day.isImageLoading ? <Loader2 className="w-3 h-3 animate-spin" /> : <Sparkles className="w-3 h-3 text-purple-500" />}
+                              Prompt Oluştur
+                            </button>
+                            <button 
+                              onClick={() => onSearchStockImage(day)}
+                              disabled={day.isImageLoading}
+                              className="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-zinc-800 hover:bg-blue-900/20 hover:text-blue-300 text-zinc-400 text-xs font-medium border border-zinc-700 hover:border-blue-500/30 transition-all"
+                            >
+                              {day.isImageLoading ? <Loader2 className="w-3 h-3 animate-spin" /> : <ImageIcon className="w-3 h-3 text-blue-500" />}
+                              Stok Fotoğraf
+                            </button>
+                          </div>
+                        )}
                      </div>
                   </div>
                 )}
