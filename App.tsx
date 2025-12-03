@@ -7,7 +7,7 @@ import { DayCard } from './components/DayCard';
 import { generateDayContent, generateImage } from './services/geminiService';
 import { searchStockImage } from './services/imageService';
 import { saveDayToFirestore, loadAllDaysFromFirestore, deleteDayFromFirestore, savePlanToFirestore, loadPlanFromFirestore, resetFirestoreData } from './services/firebaseService';
-import { Wand2, Download, AlertTriangle, Terminal, FileText, FileType, ChevronDown, CheckCircle2, RotateCcw, Trash2 } from 'lucide-react';
+import { Wand2, Download, AlertTriangle, Terminal, FileText, FileType, ChevronDown, CheckCircle2, RotateCcw, Trash2, X } from 'lucide-react';
 import { STUDENT_INFO, COMPANY_INFO } from './constants';
 import { Document, Packer, Paragraph, TextRun, HeadingLevel, AlignmentType, ImageRun } from 'docx';
 
@@ -17,6 +17,7 @@ const App: React.FC = () => {
   const [isLoadingFromDb, setIsLoadingFromDb] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showExportMenu, setShowExportMenu] = useState(false);
+  const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const exportMenuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -369,7 +370,7 @@ const App: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen pb-20">
+    <div className="min-h-screen pb-20 relative">
       {/* Header */}
       <header className="bg-zinc-900/50 backdrop-blur-md border-b border-zinc-800 sticky top-0 z-40">
         <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
@@ -492,6 +493,7 @@ const App: React.FC = () => {
                                 onUpdatePlan={handleUpdatePlan}
                                 onGenerateAIImage={handleGenerateAIImage}
                                 onSearchStockImage={handleSearchStockImage}
+                                onImageClick={setSelectedImage}
                             />
                         ))}
                     </div>
@@ -506,6 +508,30 @@ const App: React.FC = () => {
             </div>
         </div>
       </main>
+
+      {/* Lightbox / Image Viewer */}
+      {selectedImage && (
+        <div className="fixed inset-0 z-50 bg-black/95 backdrop-blur-md flex items-center justify-center p-4 animate-fade-in" onClick={() => setSelectedImage(null)}>
+           <button 
+             onClick={() => setSelectedImage(null)}
+             className="absolute top-4 right-4 p-3 bg-zinc-900 rounded-full text-zinc-400 hover:text-white hover:bg-zinc-800 border border-zinc-800 transition-all z-10"
+           >
+             <X className="w-6 h-6" />
+           </button>
+           
+           <div className="relative max-w-7xl max-h-screen w-full h-full flex items-center justify-center p-4">
+             <img 
+               src={selectedImage} 
+               alt="Full View" 
+               className="max-w-full max-h-[90vh] object-contain rounded-lg shadow-2xl shadow-black border border-zinc-800"
+               onClick={(e) => e.stopPropagation()} // Prevent closing when clicking the image itself
+             />
+             <div className="absolute bottom-10 left-1/2 -translate-x-1/2 px-6 py-3 bg-zinc-900/80 backdrop-blur rounded-full border border-zinc-700 text-zinc-300 text-sm font-medium">
+               Görseli kapatmak için boşluğa tıklayın
+             </div>
+           </div>
+        </div>
+      )}
     </div>
   );
 };

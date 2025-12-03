@@ -17,11 +17,17 @@ const getSearchQuery = (specificTopic: string): string => {
 };
 
 export const searchStockImage = async (query: string): Promise<string | null> => {
+  // If no API Key is provided, use a public placeholder service that supports keywords
   if (!UNSPLASH_ACCESS_KEY || UNSPLASH_ACCESS_KEY === "YOUR_ACCESS_KEY_HERE") {
-     console.warn("Unsplash API Key is missing or invalid.");
-     // Fallback to a random image service if no key (for demo purposes)
-     // or return null to indicate failure
-     return `https://source.unsplash.com/random/800x600/?${encodeURIComponent(getSearchQuery(query))}`;
+     console.warn("Unsplash API Key is missing. Using fallback service.");
+     
+     // Get keywords and format them for LoremFlickr (comma separated)
+     const searchTerms = getSearchQuery(query);
+     // Take first 2-3 words to ensure better relevance with simple tag matching
+     const tags = searchTerms.split(' ').slice(0, 3).join(',');
+     
+     // Add a random timestamp to prevent caching the same image for different days
+     return `https://loremflickr.com/800/600/${tags}?random=${Date.now()}`;
   }
 
   try {
@@ -52,6 +58,7 @@ export const searchStockImage = async (query: string): Promise<string | null> =>
     return null;
   } catch (error) {
     console.error("Stock image search failed:", error);
-    return null;
+    // Final fallback on error
+    return `https://loremflickr.com/800/600/electrical,engineering?random=${Date.now()}`;
   }
 };

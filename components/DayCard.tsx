@@ -12,6 +12,7 @@ interface DayCardProps {
   onUpdatePlan: (day: DayEntry, newType: InternshipType, newTopic: string) => Promise<void>;
   onGenerateAIImage: (day: DayEntry) => Promise<void>;
   onSearchStockImage: (day: DayEntry) => Promise<void>;
+  onImageClick: (imageUrl: string) => void;
   isLast: boolean;
 }
 
@@ -23,6 +24,7 @@ export const DayCard: React.FC<DayCardProps> = ({
   onUpdatePlan, 
   onGenerateAIImage,
   onSearchStockImage,
+  onImageClick,
   isLast 
 }) => {
   const [isSaving, setIsSaving] = useState(false);
@@ -272,23 +274,33 @@ export const DayCard: React.FC<DayCardProps> = ({
                                  <img 
                                    src={day.imageUrl} 
                                    alt="Generated Visual" 
-                                   className="w-full h-full object-cover rounded cursor-zoom-in"
+                                   className="w-full h-full object-cover rounded cursor-zoom-in hover:scale-105 transition-transform duration-500"
+                                   onClick={() => onImageClick(day.imageUrl!)}
                                  />
-                                 <div className="absolute inset-0 bg-black/60 opacity-0 group-hover/image:opacity-100 transition-opacity flex items-center justify-center backdrop-blur-[1px]">
-                                    <div className="flex flex-col gap-2">
+                                 <div 
+                                    className="absolute inset-0 bg-black/60 opacity-0 group-hover/image:opacity-100 transition-opacity flex items-center justify-center backdrop-blur-[1px] cursor-pointer"
+                                 >
+                                    <div className="flex flex-col gap-2 pointer-events-auto">
                                         <button 
-                                            onClick={() => onGenerateAIImage(day)}
+                                            onClick={(e) => { e.stopPropagation(); onGenerateAIImage(day); }}
                                             className="p-1.5 bg-zinc-800 text-purple-400 hover:text-white rounded-md text-[10px] flex items-center gap-1 border border-zinc-700 hover:border-purple-500 transition-colors"
                                             title="AI ile Yeniden Üret"
                                         >
                                             <Sparkles className="w-3 h-3" /> AI
                                         </button>
                                         <button 
-                                            onClick={() => onSearchStockImage(day)}
+                                            onClick={(e) => { e.stopPropagation(); onSearchStockImage(day); }}
                                             className="p-1.5 bg-zinc-800 text-blue-400 hover:text-white rounded-md text-[10px] flex items-center gap-1 border border-zinc-700 hover:border-blue-500 transition-colors"
                                             title="Stok Fotoğraf Ara"
                                         >
                                             <ImageIcon className="w-3 h-3" /> Stok
+                                        </button>
+                                        <button 
+                                            onClick={() => onImageClick(day.imageUrl!)}
+                                            className="p-1.5 bg-zinc-800 text-zinc-400 hover:text-white rounded-md text-[10px] flex items-center justify-center gap-1 border border-zinc-700 hover:border-zinc-500 transition-colors"
+                                            title="Büyüt"
+                                        >
+                                            <Camera className="w-3 h-3" /> Aç
                                         </button>
                                     </div>
                                  </div>
@@ -308,7 +320,7 @@ export const DayCard: React.FC<DayCardProps> = ({
                            </h4>
                            
                            {day.imageUrl ? (
-                               <p className="text-sm text-zinc-500 italic">
+                               <p className="text-sm text-zinc-500 italic line-clamp-2">
                                  "{day.visualDescription}"
                                </p>
                            ) : (
