@@ -23,6 +23,33 @@ export const INTERNSHIP_CONFIG = {
   managementRatio: 10
 };
 
+// Unsplash API Key (Demo/Public key or User provided)
+export const UNSPLASH_ACCESS_KEY = "YOUR_ACCESS_KEY_HERE"; // Lütfen geçerli bir Unsplash Access Key giriniz
+
+export const IMAGE_SEARCH_TERMS: Record<string, string> = {
+  "pano": "electrical panel switchboard wiring",
+  "kablo": "electrical cables wiring installation industrial",
+  "multimetre": "multimeter electrical testing measurement",
+  "topraklama": "electrical grounding system copper rod",
+  "aydınlatma": "lighting installation electrical construction ceiling",
+  "depo": "warehouse inventory electrical supplies shelves",
+  "AutoCAD": "electrical cad drawing computer blueprint design",
+  "montaj": "electrician installing electrical equipment construction site",
+  "arıza": "electrician fixing repairing electrical problem tools",
+  "ölçüm": "electrical measurement testing voltage current",
+  "stok": "warehouse inventory worker checking boxes",
+  "teklif": "office desk business documents computer paperwork",
+  "proje": "engineering blueprint plans electrical project desk",
+  "şantiye": "construction site electrical work hardhat",
+  "trafo": "electrical transformer substation high voltage",
+  "jeneratör": "industrial generator electrical power backup",
+  "kamera": "cctv camera installation security system",
+  "yangın": "fire alarm system smoke detector ceiling",
+  "ups": "ups battery backup system server room",
+  "bakım": "technician maintenance electrical industrial",
+  "ofis": "modern engineering office working desk computer"
+};
+
 // Üretim ve Tasarım Konu Havuzu (Spesifik Aktiviteler)
 export const PRODUCTION_TOPICS = [
   "AutoCAD'de iki katlı villa projesi aydınlatma planı çizimi",

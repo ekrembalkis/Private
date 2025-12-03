@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { DayEntry, InternshipType } from '../types';
-import { RefreshCw, Camera, PenTool, Loader2, Calendar, ChevronRight, Save, CheckCircle2, CloudUpload, Trash2, Copy, Check, Pencil, X, ChevronDown } from 'lucide-react';
+import { RefreshCw, Camera, PenTool, Loader2, Calendar, ChevronRight, Save, CheckCircle2, CloudUpload, Trash2, Copy, Check, Pencil, X, ChevronDown, ImagePlus, Sparkles, Image as ImageIcon } from 'lucide-react';
 import { PRODUCTION_TOPICS, MANAGEMENT_TOPICS } from '../constants';
 
 interface DayCardProps {
@@ -10,10 +10,21 @@ interface DayCardProps {
   onSave: (day: DayEntry) => Promise<void>;
   onDelete: (day: DayEntry) => Promise<void>;
   onUpdatePlan: (day: DayEntry, newType: InternshipType, newTopic: string) => Promise<void>;
+  onGenerateAIImage: (day: DayEntry) => Promise<void>;
+  onSearchStockImage: (day: DayEntry) => Promise<void>;
   isLast: boolean;
 }
 
-export const DayCard: React.FC<DayCardProps> = ({ day, onRegenerate, onSave, onDelete, onUpdatePlan, isLast }) => {
+export const DayCard: React.FC<DayCardProps> = ({ 
+  day, 
+  onRegenerate, 
+  onSave, 
+  onDelete, 
+  onUpdatePlan, 
+  onGenerateAIImage,
+  onSearchStockImage,
+  isLast 
+}) => {
   const [isSaving, setIsSaving] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
@@ -246,31 +257,81 @@ export const DayCard: React.FC<DayCardProps> = ({ day, onRegenerate, onSave, onD
                   ))}
                 </div>
                 
-                {day.hasVisual && day.visualDescription && (
-                  <div className="mt-6 flex flex-col sm:flex-row gap-4 p-4 bg-black/20 border border-zinc-800 rounded-xl relative overflow-hidden">
+                {day.hasVisual && (
+                  <div className="mt-6 p-4 bg-black/20 border border-zinc-800 rounded-xl relative overflow-hidden group/image">
                      <div className="absolute left-0 top-0 bottom-0 w-1 bg-purple-500/50"></div>
-                     <div className="flex-shrink-0 self-start sm:self-center">
-                        <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-lg bg-zinc-800 border border-zinc-700 p-1 flex items-center justify-center overflow-hidden">
-                          {day.isImageLoading ? (
-                            <Loader2 className="w-6 h-6 text-purple-500 animate-spin" />
-                          ) : day.imageUrl ? (
-                            <img 
-                              src={day.imageUrl} 
-                              alt="Generated Visual" 
-                              className="w-full h-full object-cover rounded hover:scale-110 transition-transform duration-500 cursor-zoom-in"
-                            />
-                          ) : (
-                            <div className="text-zinc-600 text-[10px] text-center px-1">Görsel Bekleniyor</div>
-                          )}
+                     
+                     <div className="flex flex-col sm:flex-row gap-4">
+                        <div className="flex-shrink-0 self-start sm:self-center relative">
+                           {/* Image Container */}
+                           <div className="w-16 h-16 sm:w-24 sm:h-24 rounded-lg bg-zinc-800 border border-zinc-700 p-1 flex items-center justify-center overflow-hidden relative">
+                             {day.isImageLoading ? (
+                               <Loader2 className="w-6 h-6 text-purple-500 animate-spin" />
+                             ) : day.imageUrl ? (
+                               <>
+                                 <img 
+                                   src={day.imageUrl} 
+                                   alt="Generated Visual" 
+                                   className="w-full h-full object-cover rounded cursor-zoom-in"
+                                 />
+                                 <div className="absolute inset-0 bg-black/60 opacity-0 group-hover/image:opacity-100 transition-opacity flex items-center justify-center backdrop-blur-[1px]">
+                                    <div className="flex flex-col gap-2">
+                                        <button 
+                                            onClick={() => onGenerateAIImage(day)}
+                                            className="p-1.5 bg-zinc-800 text-purple-400 hover:text-white rounded-md text-[10px] flex items-center gap-1 border border-zinc-700 hover:border-purple-500 transition-colors"
+                                            title="AI ile Yeniden Üret"
+                                        >
+                                            <Sparkles className="w-3 h-3" /> AI
+                                        </button>
+                                        <button 
+                                            onClick={() => onSearchStockImage(day)}
+                                            className="p-1.5 bg-zinc-800 text-blue-400 hover:text-white rounded-md text-[10px] flex items-center gap-1 border border-zinc-700 hover:border-blue-500 transition-colors"
+                                            title="Stok Fotoğraf Ara"
+                                        >
+                                            <ImageIcon className="w-3 h-3" /> Stok
+                                        </button>
+                                    </div>
+                                 </div>
+                               </>
+                             ) : (
+                               <div className="flex flex-col items-center justify-center gap-2 w-full h-full">
+                                  <span className="text-zinc-600 text-[9px] text-center px-1">Görsel Seçimi</span>
+                               </div>
+                             )}
+                           </div>
                         </div>
-                     </div>
-                     <div className="flex-1">
-                        <h4 className="text-xs font-bold text-purple-400 uppercase tracking-wide mb-1 flex items-center gap-1.5">
-                          <Camera className="w-3.5 h-3.5" /> Görsel Açıklaması
-                        </h4>
-                        <p className="text-sm text-zinc-500 italic">
-                          "{day.visualDescription}"
-                        </p>
+
+                        <div className="flex-1 flex flex-col justify-center">
+                           <h4 className="text-xs font-bold text-purple-400 uppercase tracking-wide mb-1 flex items-center gap-1.5">
+                             <Camera className="w-3.5 h-3.5" /> 
+                             {day.imageUrl ? (day.imageSource === 'stock' ? 'Stok Görsel' : 'AI Görsel') : 'Görsel Oluştur'}
+                           </h4>
+                           
+                           {day.imageUrl ? (
+                               <p className="text-sm text-zinc-500 italic">
+                                 "{day.visualDescription}"
+                               </p>
+                           ) : (
+                               <div className="flex gap-3 mt-1">
+                                    <button 
+                                        onClick={() => onGenerateAIImage(day)}
+                                        disabled={day.isImageLoading}
+                                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-zinc-800 hover:bg-purple-900/20 hover:text-purple-300 text-zinc-400 text-xs font-medium border border-zinc-700 hover:border-purple-500/30 transition-all"
+                                    >
+                                        {day.isImageLoading ? <Loader2 className="w-3 h-3 animate-spin" /> : <Sparkles className="w-3 h-3 text-purple-500" />}
+                                        AI ile Oluştur
+                                    </button>
+                                    <button 
+                                        onClick={() => onSearchStockImage(day)}
+                                        disabled={day.isImageLoading}
+                                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-zinc-800 hover:bg-blue-900/20 hover:text-blue-300 text-zinc-400 text-xs font-medium border border-zinc-700 hover:border-blue-500/30 transition-all"
+                                    >
+                                        {day.isImageLoading ? <Loader2 className="w-3 h-3 animate-spin" /> : <ImageIcon className="w-3 h-3 text-blue-500" />}
+                                        Stok Fotoğraf Bul
+                                    </button>
+                               </div>
+                           )}
+                        </div>
                      </div>
                   </div>
                 )}

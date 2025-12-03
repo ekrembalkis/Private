@@ -17,6 +17,7 @@ export interface DayEntry {
   hasVisual: boolean;
   visualDescription?: string;
   imageUrl?: string;
+  imageSource?: 'ai' | 'stock';
   isImageLoading?: boolean;
   topic?: string;
 }
