@@ -6,8 +6,10 @@ export default defineConfig(({ mode }) => {
 
   return {
     plugins: [react()],
-    define: {
-      'process.env.GEMINI_API_KEY': JSON.stringify(env.GEMINI_API_KEY || env.VITE_GEMINI_API_KEY)
+  define: {
+      'process.env.GEMINI_API_KEY': JSON.stringify(env.GEMINI_API_KEY || env.VITE_GEMINI_API_KEY),
+      'process.env.GOOGLE_SEARCH_API_KEY': JSON.stringify(env.GOOGLE_SEARCH_API_KEY || env.VITE_GOOGLE_SEARCH_API_KEY),
+      'process.env.GOOGLE_CSE_ID': JSON.stringify(env.GOOGLE_CSE_ID || env.VITE_GOOGLE_CSE_ID)
     },
     build: {
       outDir: 'dist',

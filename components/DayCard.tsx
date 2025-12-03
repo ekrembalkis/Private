@@ -11,7 +11,7 @@ interface DayCardProps {
   onDelete: (day: DayEntry) => Promise<void>;
   onUpdatePlan: (day: DayEntry, newType: InternshipType, newTopic: string) => Promise<void>;
   onGenerateAIImage: (day: DayEntry) => Promise<void>;
-  onSearchStockImage: (day: DayEntry) => Promise<void>;
+  onSearchImage: (day: DayEntry) => Promise<void>;
   onImageClick: (imageUrl: string) => void;
   isLast: boolean;
 }
@@ -23,7 +23,7 @@ export const DayCard: React.FC<DayCardProps> = ({
   onDelete, 
   onUpdatePlan, 
   onGenerateAIImage,
-  onSearchStockImage,
+  onSearchImage,
   onImageClick,
   isLast 
 }) => {
@@ -289,7 +289,7 @@ export const DayCard: React.FC<DayCardProps> = ({
                                 Kopyala
                               </button>
                               <button 
-                                onClick={() => onSearchStockImage(day)}
+                                onClick={() => onSearchImage(day)}
                                 disabled={day.isImageLoading}
                                 className="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-xs font-medium border border-zinc-700 transition-all"
                               >
@@ -321,7 +321,7 @@ export const DayCard: React.FC<DayCardProps> = ({
                               Prompt Oluştur
                             </button>
                             <button 
-                              onClick={() => onSearchStockImage(day)}
+                              onClick={() => onSearchImage(day)}
                               disabled={day.isImageLoading}
                               className="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-zinc-800 hover:bg-blue-900/20 hover:text-blue-300 text-zinc-400 text-xs font-medium border border-zinc-700 hover:border-blue-500/30 transition-all"
                             >

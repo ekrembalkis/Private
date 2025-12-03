@@ -5,7 +5,7 @@ import { DayEntry, InternshipType } from './types';
 import { Stats } from './components/Stats';
 import { DayCard } from './components/DayCard';
 import { generateDayContent, generateImagePrompt } from './services/geminiService';
-import { searchStockImage } from './services/imageService';
+import { searchImage } from './services/imageService';
 import { saveDayToFirestore, loadAllDaysFromFirestore, deleteDayFromFirestore, savePlanToFirestore, loadPlanFromFirestore, resetFirestoreData } from './services/firebaseService';
 import { Wand2, Download, AlertTriangle, Terminal, FileText, FileType, ChevronDown, CheckCircle2, RotateCcw, Trash2, X } from 'lucide-react';
 import { STUDENT_INFO, COMPANY_INFO } from './constants';
@@ -148,13 +148,13 @@ const handleGenerateAIImage = async (day: DayEntry) => {
     setDays(finalDays);
   };
 
-  const handleSearchStockImage = async (day: DayEntry) => {
-    // Set Image Loading State
+const handleSearchImage = async (day: DayEntry) => {
     const updatedDays = days.map(d => d.dayNumber === day.dayNumber ? { ...d, isImageLoading: true } : d);
     setDays(updatedDays);
 
     try {
-      const imageUrl = await searchStockImage(day.specificTopic);
+      const searchQuery = day.specificTopic;
+      const imageUrl = await searchImage(searchQuery);
 
       const finalDays = days.map(d => {
         if (d.dayNumber === day.dayNumber) {
@@ -164,7 +164,6 @@ const handleGenerateAIImage = async (day: DayEntry) => {
                 imageSource: 'stock' as const,
                 isImageLoading: false 
             };
-            // If the day is already saved in DB, update it immediately
             if (d.isSaved) {
                 saveDayToFirestore(updatedDay);
             }
@@ -174,7 +173,7 @@ const handleGenerateAIImage = async (day: DayEntry) => {
       });
       setDays(finalDays);
     } catch (err) {
-      console.error("Stock Image Search Error", err);
+      console.error("Image Search Error", err);
       setDays(days.map(d => d.dayNumber === day.dayNumber ? { ...d, isImageLoading: false } : d));
     }
   };
@@ -480,7 +479,7 @@ const handleGenerateAIImage = async (day: DayEntry) => {
                                 onDelete={handleDelete}
                                 onUpdatePlan={handleUpdatePlan}
                                 onGenerateAIImage={handleGenerateAIImage}
-                                onSearchStockImage={handleSearchStockImage}
+                                onSearchImage={handleSearchImage}
                                 onImageClick={setSelectedImage}
                             />
                         ))}

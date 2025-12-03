@@ -1,64 +1,38 @@
+export const searchImage = async (topic: string): Promise<string | null> => {
+  const apiKey = process.env.GOOGLE_SEARCH_API_KEY;
+  const cseId = process.env.GOOGLE_CSE_ID;
 
-import { IMAGE_SEARCH_TERMS, UNSPLASH_ACCESS_KEY } from '../constants';
-
-// Helper to determine the best search query based on the Turkish topic
-const getSearchQuery = (specificTopic: string): string => {
-  const lowerTopic = specificTopic.toLowerCase();
-  
-  // Try to find a matching keyword in our dictionary
-  for (const [key, value] of Object.entries(IMAGE_SEARCH_TERMS)) {
-    if (lowerTopic.includes(key.toLowerCase())) {
-      return value;
-    }
+  if (!apiKey || !cseId) {
+    console.error("Google Search API key or CSE ID is missing");
+    return null;
   }
-  
-  // Default fallback if no keyword matches
-  return "electrical engineering construction site";
-};
 
-export const searchStockImage = async (query: string): Promise<string | null> => {
-  // If no API Key is provided, use a public placeholder service that supports keywords
-  if (!UNSPLASH_ACCESS_KEY || UNSPLASH_ACCESS_KEY === "YOUR_ACCESS_KEY_HERE") {
-     console.warn("Unsplash API Key is missing. Using fallback service.");
-     
-     // Get keywords and format them for LoremFlickr (comma separated)
-     const searchTerms = getSearchQuery(query);
-     // Take first 2-3 words to ensure better relevance with simple tag matching
-     const tags = searchTerms.split(' ').slice(0, 3).join(',');
-     
-     // Add a random timestamp to prevent caching the same image for different days
-     return `https://loremflickr.com/800/600/${tags}?random=${Date.now()}`;
-  }
+  // Elektrik mühendisliği staj konularına uygun arama sorgusu oluştur
+  const searchQuery = `${topic} elektrik mühendisliği eğitim tablo şema`;
 
   try {
-    const derivedQuery = getSearchQuery(query);
-    console.log(`Searching Unsplash for: ${derivedQuery} (Derived from: ${query})`);
-
     const response = await fetch(
-      `https://api.unsplash.com/search/photos?query=${encodeURIComponent(derivedQuery)}&per_page=10&orientation=landscape&content_filter=high`,
-      {
-        headers: {
-          Authorization: `Client-ID ${UNSPLASH_ACCESS_KEY}`
-        }
-      }
+      `https://www.googleapis.com/customsearch/v1?key=${apiKey}&cx=${cseId}&q=${encodeURIComponent(searchQuery)}&searchType=image&num=5&safe=active&imgType=photo`
     );
-    
+
     if (!response.ok) {
-        throw new Error(`Unsplash API Error: ${response.statusText}`);
+      console.error("Google Search API error:", response.status);
+      return null;
     }
 
     const data = await response.json();
-    
-    if (data.results && data.results.length > 0) {
-      // Pick a random image from the top results to add variety
-      const randomIndex = Math.floor(Math.random() * Math.min(data.results.length, 5));
-      return data.results[randomIndex].urls.regular;
+
+    if (data.items && data.items.length > 0) {
+      // Rastgele bir görsel seç (ilk 5'ten)
+      const randomIndex = Math.floor(Math.random() * Math.min(5, data.items.length));
+      return data.items[randomIndex].link;
     }
-    
+
     return null;
   } catch (error) {
-    console.error("Stock image search failed:", error);
-    // Final fallback on error
-    return `https://loremflickr.com/800/600/electrical,engineering?random=${Date.now()}`;
+    console.error("Image search error:", error);
+    return null;
   }
 };
+
+// Eski fonksiyon kaldırıldı, artık sadece searchImage kullanılıyor
