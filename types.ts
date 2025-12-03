@@ -22,6 +22,7 @@ export interface DayEntry {
   imageSource?: 'ai' | 'stock';
   isImageLoading?: boolean;
   topic?: string;
+  imageAnalysis?: string;
 }
 
 export interface GenerationStats {

@@ -13,6 +13,44 @@ const getAiClient = () => {
   return new GoogleGenAI({ apiKey });
 };
 
+const fetchImageAsBase64 = async (url: string): Promise<string> => {
+  const response = await fetch(url);
+  const blob = await response.blob();
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      const base64 = (reader.result as string).split(',')[1];
+      resolve(base64);
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(blob);
+  });
+};
+
+export const analyzeImage = async (imageUrl: string): Promise<string> => {
+  const ai = getAiClient();
+  
+  try {
+    const response = await ai.models.generateContent({
+      model: "gemini-2.5-flash",
+      contents: [
+        {
+          role: "user",
+          parts: [
+            { text: "Bu görseli analiz et. Bu bir elektrik mühendisliği stajı bağlamında ne gösteriyor? Kısaca açıkla: Bu bir proje çizimi mi, teknik şema mı, saha fotoğrafı mı, eğitim materyali mi? Görselde tam olarak ne var? 2-3 cümle ile açıkla." },
+            { inlineData: { mimeType: "image/jpeg", data: await fetchImageAsBase64(imageUrl) } }
+          ]
+        }
+      ]
+    });
+    
+    return response.text || "Görsel analiz edilemedi.";
+  } catch (error) {
+    console.error("Image analysis error:", error);
+    return "Görsel analiz edilemedi.";
+  }
+};
+
 export const generateDayContent = async (day: DayEntry, previousDays: DayEntry[] = []): Promise<{ text: string; visualDesc?: string; workTitle?: string }> => {
   const ai = getAiClient();
   
@@ -31,7 +69,16 @@ export const generateDayContent = async (day: DayEntry, previousDays: DayEntry[]
     ${day.customPrompt ? `ÖZEL DİREKTİF: ${day.customPrompt}` : ''}
     Görsel Durumu: ${day.hasVisual ? 'Görsel Mevcut' : 'Görsel Yok'}
     
-    ${day.imageUrl ? `ÖNEMLİ: Bu gün için seçilen görsel şu konuyu göstermektedir: "${day.specificTopic}". Seçilen görsel teknik bir şema veya saha fotoğrafıdır. İçeriği bu görsele uygun yaz, görseldeki detaylara atıfta bulunabilirsin.` : ''}
+    ${day.imageUrl ? `ÖNEMLİ: Bu gün için seçilen görsel şu konuyu göstermektedir: "${day.specificTopic}".` : ''}
+    
+    ${day.imageUrl && day.imageAnalysis ? `
+SEÇİLEN GÖRSEL ANALİZİ: ${day.imageAnalysis}
+
+ÖNEMLİ: İçeriği yazarken bu görsel analizini dikkate al. 
+- Eğer görsel bir proje çizimi veya teknik şema ise, içerikte "projeyi inceledik, çizimi analiz ettik" gibi ifadeler kullan.
+- Eğer görsel bir saha fotoğrafı ise, sahada yapılan işleri anlat.
+- Görselde ne varsa ona uygun içerik yaz, görselde olmayan işlemleri anlatma.
+` : ''}
 
     ${contextSummary ? `
     DAHA ÖNCE YAZILAN VE KESİNLEŞEN GÜNLER (Referans ve Bağlam İçin):

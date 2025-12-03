@@ -4,7 +4,7 @@ import { generateDayList } from './utils/dateUtils';
 import { DayEntry, InternshipType } from './types';
 import { Stats } from './components/Stats';
 import { DayCard } from './components/DayCard';
-import { generateDayContent } from './services/geminiService';
+import { generateDayContent, analyzeImage } from './services/geminiService';
 import { searchImages } from './services/imageService';
 import { saveDayToFirestore, loadAllDaysFromFirestore, deleteDayFromFirestore, savePlanToFirestore, loadPlanFromFirestore, resetFirestoreData } from './services/firebaseService';
 import { Wand2, Download, AlertTriangle, Terminal, FileText, FileType, ChevronDown, CheckCircle2, RotateCcw, Trash2, X, Loader2 } from 'lucide-react';
@@ -152,14 +152,23 @@ const handleOpenImagePicker = async (day: DayEntry) => {
     }
   };
 
-  const handleSelectImage = (imageUrl: string) => {
+  const handleSelectImage = async (imageUrl: string) => {
     if (!imagePickerDay) return;
+
+    // Görseli analiz et
+    let imageAnalysis = "";
+    try {
+      imageAnalysis = await analyzeImage(imageUrl);
+    } catch (err) {
+      console.error("Analiz hatası", err);
+    }
 
     const finalDays = days.map(d => {
       if (d.dayNumber === imagePickerDay.dayNumber) {
         const updatedDay = { 
           ...d, 
           imageUrl: imageUrl,
+          imageAnalysis: imageAnalysis,
           imageSource: 'stock' as const,
         };
         if (d.isSaved) {
