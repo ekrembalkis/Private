@@ -1,4 +1,3 @@
-
 import { GoogleGenAI } from "@google/genai";
 import { SYSTEM_PROMPT } from '../constants';
 import { DayEntry } from '../types';
@@ -98,14 +97,18 @@ export const generateDayContent = async (day: DayEntry, previousDays: DayEntry[]
 export const generateImage = async (description: string): Promise<string | null> => {
   const ai = getAiClient();
   
-  const prompt = `Bir elektrik mühendisliği stajyerinin iş yerinde çektiği fotoğraf. POV (birinci şahıs) açısından, sanki stajyer kendi elleriyle veya çalışma ortamını çekmiş gibi. Sahne: ${description}. Gerçekçi, doğal ışık, cep telefonu kalitesinde fotoğraf.`;
+  // Prompt güncellendi: iPhone 13 doğallığı ve amatör çekim hissi
+  const prompt = `iPhone 13 kamerasıyla çekilmiş, filtresiz, doğal ve gerçekçi bir fotoğraf. Elektrik mühendisliği staj ortamı. POV açısı (birinci şahıs, stajyerin gözünden). Sahne: ${description}. Stok fotoğraf gibi mükemmel değil, hafif kusurlu, gerçekçi dokular, doğal ortam ışığı.`;
 
   try {
-    // Using gemini-2.5-flash-image as it is the standard model for general image generation
-    // and less likely to hit permission errors than the pro-preview model.
+    // Model güncellendi: gemini-3-pro-image-preview (Nano Banana Pro)
     const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash-image',
+      model: 'gemini-3-pro-image-preview',
       contents: prompt,
+      config: {
+        // İsteğe bağlı olarak aspect ratio veya size ayarlanabilir, şimdilik varsayılan bırakıyoruz.
+        // imageConfig: { aspectRatio: "1:1" } 
+      }
     });
 
     if (response.candidates && response.candidates[0].content.parts) {
