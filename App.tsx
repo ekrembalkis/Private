@@ -5,6 +5,9 @@ import { Stats } from './components/Stats';
 import { DayCard } from './components/DayCard';
 import { LoginScreen } from './components/LoginScreen';
 import { BatchProgress } from './components/BatchProgress';
+import { ToastContainer, useToast } from './components/Toast';
+import { ConfirmDialog } from './components/ConfirmDialog';
+import { LoadingScreen } from './components/Skeleton';
 import { generateDayContent, analyzeImage } from './services/geminiService';
 import { searchImages, StockImage } from './services/imageService';
 import { saveDayToFirestore, loadAllDaysFromFirestore, deleteDayFromFirestore, savePlanToFirestore, loadPlanFromFirestore, resetFirestoreData } from './services/firebaseService';
@@ -30,6 +33,25 @@ const App: React.FC = () => {
   const [isSearchingImages, setIsSearchingImages] = useState(false);
   const [selectedImageType, setSelectedImageType] = useState<string>('autocad');
   const exportMenuRef = useRef<HTMLDivElement>(null);
+  
+  // Toast Hook
+  const { toasts, removeToast, success, error: toastError, warning, info } = useToast();
+
+  // Confirm Dialog State
+  const [confirmDialog, setConfirmDialog] = useState<{
+    isOpen: boolean;
+    title: string;
+    message: string;
+    onConfirm: () => void;
+  } | null>(null);
+
+  const showConfirm = (title: string, message: string, onConfirm: () => void) => {
+    setConfirmDialog({ isOpen: true, title, message, onConfirm });
+  };
+
+  const closeConfirm = () => {
+    setConfirmDialog(null);
+  };
 
   // Batch processing states
   const [batchRunning, setBatchRunning] = useState(false);
@@ -127,8 +149,10 @@ const App: React.FC = () => {
     try {
       await logOut();
       setDays([]);
+      info("Çıkış Yapıldı", "Oturum başarıyla kapatıldı.");
     } catch (error) {
       console.error('Logout error:', error);
+      toastError("Çıkış Hatası", "Çıkış yapılırken bir sorun oluştu.");
     }
   };
 
@@ -137,7 +161,7 @@ const App: React.FC = () => {
     const pendingDays = days.filter(d => !d.isGenerated && !d.hasVisual);
     
     if (pendingDays.length === 0) {
-      alert("Üretilecek gün bulunamadı. Tüm günler zaten oluşturulmuş veya görsel gerektiriyor.");
+      warning("Üretilecek gün bulunamadı", "Tüm günler zaten oluşturulmuş veya görsel gerektiriyor.");
       return;
     }
 
@@ -226,6 +250,10 @@ const App: React.FC = () => {
       setBatchCompleted(0);
       setBatchTotal(0);
     }, 5000);
+    
+    if (successCount > 0) {
+      success("Toplu İşlem Tamamlandı", `${successCount} gün başarıyla üretildi.`);
+    }
   };
 
   const handleBatchPause = () => {
@@ -243,12 +271,13 @@ const App: React.FC = () => {
     batchPauseRef.current = false;
     setBatchRunning(false);
     setBatchPaused(false);
+    info("İşlem İptal Edildi", "Toplu üretim durduruldu.");
   };
 
   const handleRegenerate = async (day: DayEntry) => {
     // Guard: If day has visual but no image URL is selected, prevent generation
     if (day.hasVisual && !day.imageUrl) {
-        alert("Lütfen içerik oluşturmadan önce bir görsel seçin.");
+        warning("Görsel Gerekli", "Lütfen içerik oluşturmadan önce bir görsel seçin.");
         return;
     }
 
@@ -281,7 +310,7 @@ const App: React.FC = () => {
       console.error("Error regenerating day:", error);
       const errorDays = days.map(d => d.dayNumber === day.dayNumber ? { ...d, isLoading: false } : d);
       setDays(errorDays);
-      alert("İçerik oluşturulurken bir hata oluştu. Lütfen tekrar deneyin.");
+      toastError("İçerik Oluşturma Hatası", "İçerik oluşturulurken bir hata oluştu. Lütfen tekrar deneyin.");
     }
   };
 
@@ -302,6 +331,7 @@ const App: React.FC = () => {
       setImageSearchResults(images);
     } catch (err) {
       console.error("Image Search Error", err);
+      toastError("Arama Hatası", "Görseller aranırken bir sorun oluştu.");
     } finally {
       setIsSearchingImages(false);
     }
@@ -340,23 +370,35 @@ const App: React.FC = () => {
   };
 
   const handleSave = async (day: DayEntry) => {
-    const success = await saveDayToFirestore(day);
-    if (success) {
+    const result = await saveDayToFirestore(day);
+    if (result) {
       const finalDays = days.map(d => d.dayNumber === day.dayNumber ? { ...d, isSaved: true } : d);
       setDays(finalDays);
+      success('Kaydedildi', `Gün ${day.dayNumber} başarıyla kaydedildi`);
     } else {
-      alert("Kaydetme başarısız oldu.");
+      toastError('Hata', 'Kaydetme sırasında bir hata oluştu');
     }
   };
 
   const handleDelete = async (day: DayEntry) => {
-    const success = await deleteDayFromFirestore(day.dayNumber);
-    if (success) {
-      const finalDays = days.map(d => d.dayNumber === day.dayNumber ? { ...d, isSaved: false } : d);
-      setDays(finalDays);
-    } else {
-      alert("Silme işlemi başarısız oldu.");
-    }
+    showConfirm(
+      'Günü Sil',
+      `Gün ${day.dayNumber} içeriği silinecek. Devam edilsin mi?`,
+      async () => {
+        closeConfirm();
+        const result = await deleteDayFromFirestore(day.dayNumber);
+        if (result) {
+          const finalDays = days.map(d => d.dayNumber === day.dayNumber 
+            ? { ...d, content: '', isGenerated: false, isSaved: false } 
+            : d
+          );
+          setDays(finalDays);
+          success('Silindi', `Gün ${day.dayNumber} başarıyla silindi`);
+        } else {
+          toastError('Hata', 'Silme sırasında bir hata oluştu');
+        }
+      }
+    );
   };
 
   const handleUpdatePlan = async (day: DayEntry, newType: InternshipType, newTopic: string, customPrompt: string) => {
@@ -381,49 +423,52 @@ const App: React.FC = () => {
     
     // Save new plan structure to Firestore
     await savePlanToFirestore(updatedDays);
+    success("Plan Güncellendi", "Değişiklikler kaydedildi.");
   };
 
   const handleResetAll = async () => {
-    const savedCount = days.filter(d => d.isSaved).length;
-    let confirmMessage = "Tüm staj planı ve içerikleri sıfırlanacak. Yeni rastgele bir plan oluşturulacak. Emin misiniz?";
-    
-    if (savedCount > 0) {
-      confirmMessage += `\n\nUYARI: ${savedCount} adet kaydedilmiş gün veritabanından tamamen SİLİNECEK.`;
-    }
-
-    if (!window.confirm(confirmMessage)) return;
-
-    setIsLoadingFromDb(true);
-    setError(null);
-
-    try {
-      await resetFirestoreData();
-      
-      const newDays = generateDayList();
-      await savePlanToFirestore(newDays);
-      
-      const hydratedDays = newDays.map(d => ({
-        ...d,
-        content: '',
-        isGenerated: false,
-        isLoading: false,
-        isSaved: false,
-        isImageLoading: false
-      }));
-      
-      setDays(hydratedDays);
-    } catch (err) {
-      console.error("Reset failed", err);
-      setError("Sıfırlama işlemi başarısız. Sayfayı yenileyip tekrar deneyin.");
-    } finally {
-      setIsLoadingFromDb(false);
-    }
+    showConfirm(
+      'Tüm Verileri Sıfırla',
+      'Bu işlem tüm içerikleri ve planı silecek. Bu işlem geri alınamaz!',
+      async () => {
+        closeConfirm();
+        setIsLoadingFromDb(true);
+        setError(null);
+        try {
+          const result = await resetFirestoreData();
+          if (result) {
+            const newDays = generateDayList();
+            await savePlanToFirestore(newDays);
+            
+            const hydratedDays = newDays.map(d => ({
+              ...d,
+              content: '',
+              isGenerated: false,
+              isLoading: false,
+              isSaved: false,
+              isImageLoading: false
+            }));
+            
+            setDays(hydratedDays);
+            success('Sıfırlandı', 'Tüm veriler başarıyla sıfırlandı');
+          } else {
+            toastError('Hata', 'Sıfırlama sırasında bir hata oluştu');
+          }
+        } catch (err) {
+          console.error("Reset failed", err);
+          setError("Sıfırlama işlemi başarısız. Sayfayı yenileyip tekrar deneyin.");
+          toastError("Hata", "Sıfırlama işlemi başarısız oldu.");
+        } finally {
+          setIsLoadingFromDb(false);
+        }
+      }
+    );
   };
 
   const handleExport = async () => {
     const savedDays = days.filter(d => d.isSaved && d.isGenerated);
     if (savedDays.length === 0) {
-      alert("Dışa aktarılacak kaydedilmiş gün bulunamadı.");
+      warning("Veri Yok", "Dışa aktarılacak kaydedilmiş gün bulunamadı.");
       return;
     }
   
@@ -582,16 +627,17 @@ const App: React.FC = () => {
       a.click();
       document.body.removeChild(a);
       window.URL.revokeObjectURL(url);
+      success("Word Dosyası Hazır", "İndirme işlemi başlatıldı.");
     } catch (err) {
       console.error("Export failed", err);
-      alert("Word dosyası oluşturulurken hata çıktı.");
+      toastError("Hata", "Word dosyası oluşturulurken hata çıktı.");
     }
   };
 
   const handleExportPDF = async () => {
     const savedDays = days.filter(d => d.isSaved && d.isGenerated);
     if (savedDays.length === 0) {
-      alert("Dışa aktarılacak kaydedilmiş gün bulunamadı.");
+      warning("Veri Yok", "Dışa aktarılacak kaydedilmiş gün bulunamadı.");
       return;
     }
   
@@ -605,36 +651,58 @@ const App: React.FC = () => {
       a.click();
       document.body.removeChild(a);
       window.URL.revokeObjectURL(url);
+      success("PDF Hazır", "İndirme işlemi başlatıldı.");
     } catch (err) {
       console.error("PDF export failed", err);
-      alert("PDF oluşturulurken hata çıktı.");
+      toastError("Hata", "PDF oluşturulurken hata çıktı.");
     }
   };
 
+  // Keyboard shortcuts
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Escape tuşu - modalları kapat
+      if (e.key === 'Escape') {
+        if (confirmDialog) {
+          closeConfirm();
+        }
+        if (showExportMenu) {
+          setShowExportMenu(false);
+        }
+      }
+      
+      // Ctrl+Shift+S - Tümünü kaydet (Export)
+      if (e.ctrlKey && e.shiftKey && e.key === 'S') {
+        e.preventDefault();
+        setShowExportMenu(prev => !prev);
+      }
+      
+      // Ctrl+Shift+G - Toplu üret
+      if (e.ctrlKey && e.shiftKey && e.key === 'G') {
+        e.preventDefault();
+        if (!batchRunning) {
+          handleBatchGenerate();
+        }
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [confirmDialog, showExportMenu, batchRunning, handleBatchGenerate]);
+
   // Auth Loading Screen
   if (authLoading) {
-    return (
-       <div className="min-h-screen bg-zinc-950 flex flex-col items-center justify-center gap-4">
-          <Loader2 className="w-8 h-8 text-blue-500 animate-spin" />
-          <p className="text-zinc-500 font-mono text-xs">AUTHENTICATING...</p>
-       </div>
-    );
+    return <LoadingScreen message="Oturum kontrol ediliyor..." />;
   }
 
   // Not Authenticated -> Show Login
   if (!user) {
-    return <LoginScreen onLoginSuccess={() => {}} />;
+    return <LoginScreen onLoginSuccess={() => success("Giriş Başarılı", "Hoş geldiniz!")} />;
   }
 
   // App Loading Screen (Data Fetching)
   if (isLoadingFromDb) {
-     return (
-        <div className="min-h-screen bg-zinc-950 flex flex-col items-center justify-center gap-4">
-           <div className="w-16 h-16 border-4 border-blue-500/30 border-t-blue-500 rounded-full animate-spin"></div>
-           <p className="text-zinc-400 font-mono animate-pulse">SİSTEM BAŞLATILIYOR...</p>
-           <p className="text-zinc-600 text-xs">{user.email}</p>
-        </div>
-     );
+     return <LoadingScreen message={`Veriler yükleniyor... (${user.email})`} />;
   }
 
   const savedCount = days.filter(d => d.isSaved).length;
@@ -931,6 +999,21 @@ const App: React.FC = () => {
         onResume={handleBatchResume}
         onCancel={handleBatchCancel}
       />
+      
+      <ToastContainer toasts={toasts} onClose={removeToast} />
+
+      {confirmDialog && (
+        <ConfirmDialog
+          isOpen={confirmDialog.isOpen}
+          title={confirmDialog.title}
+          message={confirmDialog.message}
+          type="danger"
+          confirmText="Evet, Sil"
+          cancelText="Vazgeç"
+          onConfirm={confirmDialog.onConfirm}
+          onCancel={closeConfirm}
+        />
+      )}
     </div>
   );
 };

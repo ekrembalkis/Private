@@ -62,6 +62,49 @@
       ::-webkit-scrollbar-thumb:hover {
         background: #52525b;
       }
+
+      /* Toast ve Dialog animasyonları */
+      @keyframes fade-in {
+        from { opacity: 0; transform: translateY(-10px); }
+        to { opacity: 1; transform: translateY(0); }
+      }
+      
+      @keyframes scale-in {
+        from { opacity: 0; transform: scale(0.95); }
+        to { opacity: 1; transform: scale(1); }
+      }
+      
+      @keyframes slide-up {
+        from { opacity: 0; transform: translateY(20px); }
+        to { opacity: 1; transform: translateY(0); }
+      }
+      
+      .animate-fade-in {
+        animation: fade-in 0.3s ease-out forwards;
+      }
+      
+      .animate-scale-in {
+        animation: scale-in 0.2s ease-out forwards;
+      }
+      
+      .animate-slide-up {
+        animation: slide-up 0.3s ease-out forwards;
+      }
+      
+      /* Skeleton pulse */
+      @keyframes pulse {
+        0%, 100% { opacity: 0.4; }
+        50% { opacity: 0.7; }
+      }
+      
+      .animate-pulse {
+        animation: pulse 1.5s ease-in-out infinite;
+      }
+      
+      /* Smooth transitions */
+      * {
+        scroll-behavior: smooth;
+      }
     </style>
 
 <script type="importmap">
