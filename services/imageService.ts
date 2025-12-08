@@ -284,7 +284,7 @@ export const PRESET_CATEGORIES: CategoryGroup[] = [
         id: 'cable-section',
         name: 'Kablo Kesit Tablosu',
         description: 'İletken kesit seçim tabloları',
-        queries: ['kablo kesit tablosu', 'cable cross section table', 'conductor sizing chart'],
+        queries: ['cable cross section table AWG', 'wire gauge ampacity chart', 'conductor sizing table', 'kablo kesit tablosu'],
         wikimediaCategory: 'Electrical_wiring',
         suggestedTopic: 'Kablo kesit hesaplamaları ve standartlar eğitimi',
         suggestedPrompt: 'Bugün kablo kesit seçim tabloları üzerinde çalışıldı. Akım taşıma kapasitesi, ortam sıcaklığı düzeltme faktörleri ve kesit hesaplama yöntemleri incelendi. Tablodaki değerlerin pratikte nasıl kullanıldığı öğrenildi.'
@@ -293,7 +293,7 @@ export const PRESET_CATEGORIES: CategoryGroup[] = [
         id: 'current-capacity',
         name: 'Akım Taşıma Kapasitesi',
         description: 'Kabloların akım taşıma değerleri',
-        queries: ['akım taşıma kapasitesi tablosu', 'current carrying capacity table', 'ampacity chart'],
+        queries: ['ampacity table electrical wire', 'current carrying capacity chart', 'cable current rating', 'akım taşıma kapasitesi'],
         wikimediaCategory: 'Electrical_wiring',
         suggestedTopic: 'Kablo akım taşıma kapasitesi hesaplamaları',
         suggestedPrompt: 'Bugün kabloların akım taşıma kapasitesi tabloları incelendi. Farklı kablo tipleri, döşeme koşulları ve sıcaklık faktörlerinin kapasiteye etkisi öğrenildi. Pratik hesaplama örnekleri yapıldı.'
@@ -302,7 +302,7 @@ export const PRESET_CATEGORIES: CategoryGroup[] = [
         id: 'voltage-drop',
         name: 'Gerilim Düşümü Tablosu',
         description: 'Gerilim düşümü hesap tabloları',
-        queries: ['gerilim düşümü tablosu', 'voltage drop calculation table'],
+        queries: ['voltage drop calculation chart', 'electrical voltage drop table', 'wire voltage drop', 'gerilim düşümü tablosu'],
         wikimediaCategory: 'Electrical_power_distribution_diagrams',
         suggestedTopic: 'Gerilim düşümü hesaplamaları eğitimi',
         suggestedPrompt: 'Bugün gerilim düşümü hesaplama tabloları üzerinde çalışıldı. Hat uzunluğu, kesit ve akım değerlerine göre gerilim düşümü formülleri uygulandı. Yönetmeliklerdeki izin verilen düşüm değerleri öğrenildi.'
@@ -311,7 +311,7 @@ export const PRESET_CATEGORIES: CategoryGroup[] = [
         id: 'fuse-selection',
         name: 'Sigorta Seçim Tablosu',
         description: 'Sigorta ve şalter seçim tabloları',
-        queries: ['sigorta seçim tablosu', 'fuse selection chart', 'circuit breaker sizing'],
+        queries: ['circuit breaker sizing chart', 'fuse selection table MCB', 'breaker amperage chart', 'sigorta seçim tablosu'],
         wikimediaCategory: 'Circuit_breaker_symbols',
         suggestedTopic: 'Sigorta ve şalter seçim kriterleri eğitimi',
         suggestedPrompt: 'Bugün sigorta ve otomatik şalter seçim tabloları incelendi. Kesici kapasitesi, karakteristik eğriler (B, C, D) ve koordinasyon kuralları öğrenildi. Kablo koruma koordinasyonu üzerinde çalışıldı.'
@@ -320,7 +320,7 @@ export const PRESET_CATEGORIES: CategoryGroup[] = [
         id: 'cable-colors',
         name: 'Kablo Renk Kodları',
         description: 'İletken renk standartları',
-        queries: ['kablo renk kodu tablosu', 'wire color code chart', 'electrical wire colors'],
+        queries: ['electrical wire color code IEC', 'cable color standard', 'wiring color codes', 'kablo renk kodu'],
         wikimediaCategory: 'SVG_electrical_wiring_and_cables',
         suggestedTopic: 'Kablo renk kodları ve işaretleme standartları',
         suggestedPrompt: 'Bugün elektrik kablolarının renk kodlama standartları öğrenildi. Faz, nötr ve toprak iletkenlerinin renkleri, eski ve yeni standartlar arasındaki farklar incelendi. IEC standartlarına uygun işaretleme yapıldı.'
@@ -336,8 +336,8 @@ export const PRESET_CATEGORIES: CategoryGroup[] = [
         id: 'installation-symbols',
         name: 'Elektrik Tesisat Sembolleri',
         description: 'Anahtar, priz, aydınlatma sembolleri',
-        queries: ['elektrik tesisat sembolleri', 'electrical installation symbols', 'wiring diagram symbols'],
-        wikimediaCategory: 'Electrical_symbols',
+        queries: ['electrical symbols IEC 60617', 'wiring diagram symbols', 'electrical schematic symbols', 'tesisat sembolleri'],
+        wikimediaCategory: 'IEC_60617_electrical_symbols',
         suggestedTopic: 'Elektrik tesisat sembolleri eğitimi',
         suggestedPrompt: 'Bugün elektrik tesisat projelerinde kullanılan semboller öğrenildi. Anahtar, priz, aydınlatma armatürleri ve dağıtım kutusu sembolleri incelendi. Proje okuma ve çizim teknikleri üzerinde çalışıldı.'
       },
@@ -345,8 +345,8 @@ export const PRESET_CATEGORIES: CategoryGroup[] = [
         id: 'single-line-symbols',
         name: 'Tek Hat Şeması Sembolleri',
         description: 'Trafo, şalter, bara sembolleri',
-        queries: ['tek hat şeması sembolleri', 'single line diagram symbols', 'one line diagram symbols'],
-        wikimediaCategory: 'Single-line_wiring_diagrams_of_distribution_boards',
+        queries: ['single line diagram symbols', 'one line diagram symbols power', 'transformer symbol electrical', 'tek hat sembolleri'],
+        wikimediaCategory: 'Electrical_one-line_diagrams',
         suggestedTopic: 'Tek hat şeması sembolleri ve okuma teknikleri',
         suggestedPrompt: 'Bugün tek hat şemalarında kullanılan semboller öğrenildi. Trafo, kesici, ayırıcı, bara ve ölçü trafosu sembolleri incelendi. Gerçek projeler üzerinde şema okuma çalışması yapıldı.'
       },
@@ -354,7 +354,7 @@ export const PRESET_CATEGORIES: CategoryGroup[] = [
         id: 'panel-symbols',
         name: 'Pano Sembolleri',
         description: 'Pano içi eleman sembolleri',
-        queries: ['elektrik pano sembolleri', 'electrical panel symbols', 'switchboard symbols'],
+        queries: ['electrical panel symbols schematic', 'switchboard diagram symbols', 'circuit breaker symbol', 'pano sembolleri'],
         wikimediaCategory: 'Circuit_breaker_symbols',
         suggestedTopic: 'Elektrik pano sembolleri eğitimi',
         suggestedPrompt: 'Bugün elektrik panolarında kullanılan semboller öğrenildi. Şalter, kontaktör, röle, sinyal lambası ve buton sembolleri incelendi. Pano yerleşim ve bağlantı şemaları okuma çalışması yapıldı.'
@@ -363,7 +363,7 @@ export const PRESET_CATEGORIES: CategoryGroup[] = [
         id: 'protection-symbols',
         name: 'Koruma Cihazları Sembolleri',
         description: 'Röle, kontaktör, termik sembolleri',
-        queries: ['koruma cihazları sembolleri', 'protection relay symbols', 'contactor symbols'],
+        queries: ['protection relay symbols IEC', 'contactor symbol diagram', 'overload relay symbol', 'koruma sembolleri'],
         wikimediaCategory: 'Electronic_symbols',
         suggestedTopic: 'Koruma cihazları sembolleri ve şemaları',
         suggestedPrompt: 'Bugün koruma cihazlarının sembolleri öğrenildi. Termik röle, manyetik koruma, aşırı akım rölesi ve kaçak akım koruma sembolleri incelendi. Koruma koordinasyonu şemaları üzerinde çalışıldı.'
@@ -379,8 +379,8 @@ export const PRESET_CATEGORIES: CategoryGroup[] = [
         id: 'single-line',
         name: 'Tek Hat Şeması Örnekleri',
         description: 'Bina ve tesis tek hat şemaları',
-        queries: ['tek hat şeması örneği', 'single line diagram example', 'electrical one line diagram'],
-        wikimediaCategory: 'Single-line_wiring_diagrams_of_distribution_boards',
+        queries: ['single line diagram electrical', 'one line diagram example', 'power distribution diagram', 'tek hat şeması'],
+        wikimediaCategory: 'Electrical_one-line_diagrams',
         suggestedTopic: 'Tek hat şeması inceleme ve analiz çalışması',
         suggestedPrompt: 'Bugün gerçek projelerin tek hat şemaları incelendi. Ana dağıtım panosu, tali panolar ve yük dağılımı analiz edildi. Şema üzerinden güç hesaplamaları ve koruma koordinasyonu değerlendirildi.'
       },
@@ -388,8 +388,8 @@ export const PRESET_CATEGORIES: CategoryGroup[] = [
         id: 'panel-wiring',
         name: 'Pano İç Bağlantı Şeması',
         description: 'Pano montaj ve bağlantı şemaları',
-        queries: ['pano bağlantı şeması', 'panel wiring diagram', 'switchboard connection diagram'],
-        wikimediaCategory: 'Electrical_installations',
+        queries: ['electrical panel wiring diagram', 'distribution board schematic', 'switchboard wiring', 'pano bağlantı şeması'],
+        wikimediaCategory: 'Electrical_wiring_diagrams',
         suggestedTopic: 'Pano iç bağlantı şemaları inceleme',
         suggestedPrompt: 'Bugün pano iç bağlantı şemaları üzerinde çalışıldı. Bara bağlantıları, klemens numaralandırma ve kablo yolları incelendi. Şemadan montaj yapma ve hata bulma teknikleri öğrenildi.'
       },
@@ -397,8 +397,8 @@ export const PRESET_CATEGORIES: CategoryGroup[] = [
         id: 'grounding',
         name: 'Topraklama Şeması',
         description: 'Topraklama sistem şemaları',
-        queries: ['topraklama şeması', 'grounding diagram', 'earthing system diagram TN TT IT'],
-        wikimediaCategory: 'Electrical_diagrams',
+        queries: ['grounding system diagram TN TT IT', 'earthing diagram electrical', 'ground electrode system', 'topraklama şeması'],
+        wikimediaCategory: 'Earthing_systems',
         suggestedTopic: 'Topraklama sistemleri ve şemaları eğitimi',
         suggestedPrompt: 'Bugün topraklama sistem şemaları incelendi. TN, TT ve IT sistemlerinin farkları, topraklama direnci hesaplamaları ve elektrot yerleşimi öğrenildi. Yönetmelik gereksinimleri değerlendirildi.'
       },
@@ -406,7 +406,7 @@ export const PRESET_CATEGORIES: CategoryGroup[] = [
         id: 'compensation',
         name: 'Kompanzasyon Şeması',
         description: 'Reaktif güç kompanzasyonu',
-        queries: ['kompanzasyon şeması', 'power factor correction diagram', 'capacitor bank diagram'],
+        queries: ['power factor correction diagram', 'capacitor bank schematic', 'reactive power compensation', 'kompanzasyon şeması'],
         wikimediaCategory: 'Electrical_diagrams',
         suggestedTopic: 'Reaktif güç kompanzasyonu eğitimi',
         suggestedPrompt: 'Bugün reaktif güç kompanzasyon sistemleri incelendi. Güç faktörü hesaplamaları, kondansatör seçimi ve kompanzasyon panosu bağlantı şemaları öğrenildi. Enerji tasarrufu hesapları yapıldı.'
@@ -415,8 +415,8 @@ export const PRESET_CATEGORIES: CategoryGroup[] = [
         id: 'motor-control',
         name: 'Motor Kumanda Devresi',
         description: 'Yıldız üçgen, direkt yol verme',
-        queries: ['motor kumanda devresi', 'motor control circuit', 'star delta starter diagram'],
-        wikimediaCategory: 'Circuit_diagrams',
+        queries: ['star delta starter diagram', 'motor control circuit schematic', 'DOL starter wiring', 'motor kumanda devresi'],
+        wikimediaCategory: 'Motor_controllers',
         suggestedTopic: 'Motor kumanda devreleri eğitimi',
         suggestedPrompt: 'Bugün motor kumanda devreleri üzerinde çalışıldı. Direkt yol verme, yıldız üçgen ve soft starter devreleri incelendi. Kumanda ve güç devresi şemaları okundu, bağlantı mantığı öğrenildi.'
       }
@@ -431,7 +431,7 @@ export const PRESET_CATEGORIES: CategoryGroup[] = [
         id: 'lighting-circuit',
         name: 'Aydınlatma Devresi',
         description: 'Aydınlatma tesisat şemaları',
-        queries: ['aydınlatma devresi şeması', 'lighting circuit diagram', 'light switch wiring'],
+        queries: ['lighting circuit diagram', 'light switch wiring schematic', 'two way switch diagram', 'aydınlatma devresi'],
         wikimediaCategory: 'Electrical_installations',
         suggestedTopic: 'Aydınlatma devre şemaları ve uygulaması',
         suggestedPrompt: 'Bugün aydınlatma devre şemaları incelendi. Basit anahtar, komütatör, vaevien ve paralel bağlantı şemaları çizildi. Enerji tasarruflu aydınlatma ve hareket sensörlü devreler öğrenildi.'
@@ -440,7 +440,7 @@ export const PRESET_CATEGORIES: CategoryGroup[] = [
         id: 'socket-circuit',
         name: 'Priz Devresi',
         description: 'Priz hattı bağlantı şemaları',
-        queries: ['priz devresi şeması', 'socket outlet wiring diagram', 'power outlet circuit'],
+        queries: ['socket outlet wiring diagram', 'power outlet circuit', 'receptacle wiring schematic', 'priz devresi'],
         wikimediaCategory: 'Electrical_installations',
         suggestedTopic: 'Priz devreleri ve topraklama uygulaması',
         suggestedPrompt: 'Bugün priz devre şemaları ve bağlantıları incelendi. Topraklı priz montajı, hat kesitleri ve koruma koordinasyonu öğrenildi. Mutfak ve banyo gibi özel mahaller için kurallar değerlendirildi.'
@@ -449,7 +449,7 @@ export const PRESET_CATEGORIES: CategoryGroup[] = [
         id: 'rcd-circuit',
         name: 'Kaçak Akım Koruma',
         description: 'RCD/RCCB bağlantı şemaları',
-        queries: ['kaçak akım rölesi bağlantısı', 'RCD wiring diagram', 'residual current device'],
+        queries: ['RCD wiring diagram', 'RCCB connection schematic', 'residual current device circuit', 'kaçak akım koruma'],
         wikimediaCategory: 'Circuit_diagrams',
         suggestedTopic: 'Kaçak akım koruma sistemleri eğitimi',
         suggestedPrompt: 'Bugün kaçak akım koruma cihazları (RCD/RCCB) incelendi. Çalışma prensibi, bağlantı şeması ve test yöntemleri öğrenildi. Seçicilik ve koordinasyon kuralları değerlendirildi.'
@@ -458,7 +458,7 @@ export const PRESET_CATEGORIES: CategoryGroup[] = [
         id: 'surge-protection',
         name: 'Parafudr Bağlantısı',
         description: 'Aşırı gerilim koruma',
-        queries: ['parafudr bağlantı şeması', 'surge protector wiring', 'SPD connection diagram'],
+        queries: ['surge protector wiring SPD', 'lightning arrester diagram', 'SPD connection schematic', 'parafudr bağlantısı'],
         wikimediaCategory: 'Electrical_diagrams',
         suggestedTopic: 'Aşırı gerilim koruma sistemleri eğitimi',
         suggestedPrompt: 'Bugün parafudr (SPD) sistemleri incelendi. Tip 1, Tip 2 ve Tip 3 koruma seviyeleri, bağlantı şemaları ve koordinasyon kuralları öğrenildi. Yıldırımdan korunma prensipleri değerlendirildi.'
@@ -474,8 +474,8 @@ export const PRESET_CATEGORIES: CategoryGroup[] = [
         id: 'warning-signs',
         name: 'Elektrik Uyarı İşaretleri',
         description: 'Tehlike ve uyarı levhaları',
-        queries: ['elektrik uyarı işareti', 'electrical warning signs', 'high voltage warning'],
-        wikimediaCategory: 'SVG_electricity_warning_signs',
+        queries: ['electrical warning signs ISO', 'high voltage warning symbol', 'danger electricity sign', 'elektrik uyarı işareti'],
+        wikimediaCategory: 'Electrical_safety_symbols',
         suggestedTopic: 'Elektrik güvenlik işaretleri eğitimi',
         suggestedPrompt: 'Bugün elektrik tesislerinde kullanılan güvenlik işaretleri öğrenildi. Tehlike, uyarı ve bilgilendirme levhaları incelendi. İşaretlerin yerleşim kuralları ve standartları değerlendirildi.'
       },
@@ -483,7 +483,7 @@ export const PRESET_CATEGORIES: CategoryGroup[] = [
         id: 'safety-symbols',
         name: 'İş Güvenliği Sembolleri',
         description: 'İSG sembolleri ve işaretleri',
-        queries: ['iş güvenliği sembolleri', 'occupational safety symbols', 'safety signs electrical'],
+        queries: ['safety symbols ISO 7010', 'occupational safety signs', 'hazard warning symbols', 'iş güvenliği sembolleri'],
         wikimediaCategory: 'Safety_symbols',
         suggestedTopic: 'İş sağlığı ve güvenliği sembolleri eğitimi',
         suggestedPrompt: 'Bugün iş güvenliği sembolleri ve işaretleri öğrenildi. Yasak, zorunluluk, uyarı ve acil durum işaretleri incelendi. İşyerinde güvenli çalışma prosedürleri değerlendirildi.'
@@ -492,7 +492,7 @@ export const PRESET_CATEGORIES: CategoryGroup[] = [
         id: 'ppe',
         name: 'Kişisel Koruyucu Donanım',
         description: 'KKD görselleri',
-        queries: ['elektrikçi kişisel koruyucu', 'electrical PPE', 'personal protective equipment electrical'],
+        queries: ['electrical PPE equipment', 'insulated gloves electrical', 'personal protective equipment electrician', 'elektrikçi KKD'],
         wikimediaCategory: 'Electrical_safety',
         suggestedTopic: 'Kişisel koruyucu donanım (KKD) eğitimi',
         suggestedPrompt: 'Bugün elektrik çalışmalarında kullanılan kişisel koruyucu donanımlar öğrenildi. İzole eldiven, koruyucu gözlük, iş ayakkabısı ve yüz siperi kullanımı incelendi. KKD seçim ve bakım kuralları değerlendirildi.'
@@ -501,12 +501,11 @@ export const PRESET_CATEGORIES: CategoryGroup[] = [
   }
 ];
 
-// Kategori bazlı arama fonksiyonu
+// Kategori bazlı arama fonksiyonu - Optimize edilmiş
 export const searchByCategory = async (
   categoryId: string,
   count: number = 15
 ): Promise<StockImage[]> => {
-  // Kategoriyi bul
   let targetCategory: CategoryItem | null = null;
   
   for (const group of PRESET_CATEGORIES) {
@@ -522,22 +521,22 @@ export const searchByCategory = async (
     return [];
   }
 
+  console.log('Searching category:', targetCategory.name);
   let allResults: StockImage[] = [];
 
-  // 1. Önce Wikimedia'dan ara
+  // 1. Wikimedia kategorisinden ara
   if (targetCategory.wikimediaCategory) {
-    console.log('Searching Wikimedia category:', targetCategory.wikimediaCategory);
-    const wikiResults = await searchWikimediaByCategoryName(targetCategory.wikimediaCategory, 8);
-    allResults = [...wikiResults];
+    const wikiCatResults = await searchWikimediaByCategoryName(targetCategory.wikimediaCategory, 10);
+    allResults = [...wikiCatResults];
+    console.log('Wikimedia category results:', wikiCatResults.length);
   }
 
-  // 2. Wikimedia arama sorguları
-  for (const query of targetCategory.queries.slice(0, 2)) {
+  // 2. İngilizce sorgularla Wikimedia (daha iyi sonuç verir)
+  const englishQueries = targetCategory.queries.filter(q => /^[a-zA-Z\s]+$/.test(q.trim()));
+  for (const query of englishQueries) {
     if (allResults.length >= count) break;
-    const wikiQueryResults = await searchWikimediaImages(query, 5);
-    const newResults = wikiQueryResults.filter(r => 
-      !allResults.some(existing => existing.url === r.url)
-    );
+    const wikiResults = await searchWikimediaImages(query, 8);
+    const newResults = wikiResults.filter(r => !allResults.some(e => e.url === r.url));
     allResults = [...allResults, ...newResults];
   }
 
@@ -546,15 +545,20 @@ export const searchByCategory = async (
     for (const query of targetCategory.queries) {
       if (allResults.length >= count) break;
       const googleResults = await searchGoogleImages(query, 5, 'tablo');
-      const newResults = googleResults.filter(r => 
-        !allResults.some(existing => existing.url === r.url)
-      );
+      const newResults = googleResults.filter(r => !allResults.some(e => e.url === r.url));
       allResults = [...allResults, ...newResults];
-      await new Promise(r => setTimeout(r, 200));
+      await new Promise(r => setTimeout(r, 150));
     }
   }
 
-  return allResults.slice(0, count);
+  // SVG ve Wikimedia öncelikli sırala
+  const sorted = allResults.sort((a, b) => {
+    const aScore = (a.url.includes('.svg') ? 2 : 0) + (a.source === 'wikimedia' ? 1 : 0);
+    const bScore = (b.url.includes('.svg') ? 2 : 0) + (b.source === 'wikimedia' ? 1 : 0);
+    return bScore - aScore;
+  });
+
+  return sorted.slice(0, count);
 };
 
 // Wikimedia kategori adına göre arama
