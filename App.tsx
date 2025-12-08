@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { generateDayList } from './utils/dateUtils';
 import { DayEntry, InternshipType } from './types';
@@ -10,6 +9,8 @@ import { saveDayToFirestore, loadAllDaysFromFirestore, deleteDayFromFirestore, s
 import { Wand2, Download, AlertTriangle, Terminal, FileText, FileType, ChevronDown, CheckCircle2, RotateCcw, Trash2, X, Loader2 } from 'lucide-react';
 import { STUDENT_INFO, COMPANY_INFO } from './constants';
 import { Document, Packer, Paragraph, TextRun, HeadingLevel, AlignmentType, ImageRun } from 'docx';
+import { pdf } from '@react-pdf/renderer';
+import { StajDefteriPDF } from './services/pdfService';
 
 const App: React.FC = () => {
   const [days, setDays] = useState<DayEntry[]>([]);
@@ -348,6 +349,29 @@ const App: React.FC = () => {
     }
   };
 
+  const handleExportPDF = async () => {
+    const savedDays = days.filter(d => d.isSaved && d.isGenerated);
+    if (savedDays.length === 0) {
+      alert("Dışa aktarılacak kaydedilmiş gün bulunamadı.");
+      return;
+    }
+  
+    try {
+      const blob = await pdf(<StajDefteriPDF days={days} />).toBlob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `Staj_Defteri_${STUDENT_INFO.name.replace(' ', '_')}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error("PDF export failed", err);
+      alert("PDF oluşturulurken hata çıktı.");
+    }
+  };
+
   if (isLoadingFromDb) {
      return (
         <div className="min-h-screen bg-zinc-950 flex flex-col items-center justify-center gap-4">
@@ -429,13 +453,14 @@ const App: React.FC = () => {
                                     </div>
                                 </button>
                                 <button 
-                                    className="w-full px-4 py-3 flex items-center gap-3 hover:bg-zinc-700/50 text-left transition-colors opacity-50 cursor-not-allowed"
+                                  onClick={handleExportPDF}
+                                  className="w-full px-4 py-3 flex items-center gap-3 hover:bg-zinc-700/50 text-left transition-colors"
                                 >
-                                    <FileType className="w-4 h-4 text-red-400" />
-                                    <div>
-                                        <p className="text-sm font-medium text-zinc-200">PDF</p>
-                                        <p className="text-[10px] text-zinc-500">Yakında</p>
-                                    </div>
+                                  <FileType className="w-4 h-4 text-red-400" />
+                                  <div>
+                                    <p className="text-sm font-medium text-zinc-200">PDF</p>
+                                    <p className="text-[10px] text-zinc-500">Profesyonel format</p>
+                                  </div>
                                 </button>
                             </div>
                         )}
