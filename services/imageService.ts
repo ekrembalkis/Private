@@ -263,6 +263,8 @@ export interface CategoryItem {
   description: string;
   queries: string[]; // Wikimedia + Google için arama sorguları
   wikimediaCategory?: string; // Direkt Wikimedia kategori adı
+  suggestedTopic: string;      // Önerilen konu başlığı
+  suggestedPrompt: string;     // Önerilen custom prompt
 }
 
 export interface CategoryGroup {
@@ -283,35 +285,45 @@ export const PRESET_CATEGORIES: CategoryGroup[] = [
         name: 'Kablo Kesit Tablosu',
         description: 'İletken kesit seçim tabloları',
         queries: ['kablo kesit tablosu', 'cable cross section table', 'conductor sizing chart'],
-        wikimediaCategory: 'Electrical_wiring'
+        wikimediaCategory: 'Electrical_wiring',
+        suggestedTopic: 'Kablo kesit hesaplamaları ve standartlar eğitimi',
+        suggestedPrompt: 'Bugün kablo kesit seçim tabloları üzerinde çalışıldı. Akım taşıma kapasitesi, ortam sıcaklığı düzeltme faktörleri ve kesit hesaplama yöntemleri incelendi. Tablodaki değerlerin pratikte nasıl kullanıldığı öğrenildi.'
       },
       {
         id: 'current-capacity',
         name: 'Akım Taşıma Kapasitesi',
         description: 'Kabloların akım taşıma değerleri',
         queries: ['akım taşıma kapasitesi tablosu', 'current carrying capacity table', 'ampacity chart'],
-        wikimediaCategory: 'Electrical_wiring'
+        wikimediaCategory: 'Electrical_wiring',
+        suggestedTopic: 'Kablo akım taşıma kapasitesi hesaplamaları',
+        suggestedPrompt: 'Bugün kabloların akım taşıma kapasitesi tabloları incelendi. Farklı kablo tipleri, döşeme koşulları ve sıcaklık faktörlerinin kapasiteye etkisi öğrenildi. Pratik hesaplama örnekleri yapıldı.'
       },
       {
         id: 'voltage-drop',
         name: 'Gerilim Düşümü Tablosu',
         description: 'Gerilim düşümü hesap tabloları',
         queries: ['gerilim düşümü tablosu', 'voltage drop calculation table'],
-        wikimediaCategory: 'Electrical_power_distribution_diagrams'
+        wikimediaCategory: 'Electrical_power_distribution_diagrams',
+        suggestedTopic: 'Gerilim düşümü hesaplamaları eğitimi',
+        suggestedPrompt: 'Bugün gerilim düşümü hesaplama tabloları üzerinde çalışıldı. Hat uzunluğu, kesit ve akım değerlerine göre gerilim düşümü formülleri uygulandı. Yönetmeliklerdeki izin verilen düşüm değerleri öğrenildi.'
       },
       {
         id: 'fuse-selection',
         name: 'Sigorta Seçim Tablosu',
         description: 'Sigorta ve şalter seçim tabloları',
         queries: ['sigorta seçim tablosu', 'fuse selection chart', 'circuit breaker sizing'],
-        wikimediaCategory: 'Circuit_breaker_symbols'
+        wikimediaCategory: 'Circuit_breaker_symbols',
+        suggestedTopic: 'Sigorta ve şalter seçim kriterleri eğitimi',
+        suggestedPrompt: 'Bugün sigorta ve otomatik şalter seçim tabloları incelendi. Kesici kapasitesi, karakteristik eğriler (B, C, D) ve koordinasyon kuralları öğrenildi. Kablo koruma koordinasyonu üzerinde çalışıldı.'
       },
       {
         id: 'cable-colors',
         name: 'Kablo Renk Kodları',
         description: 'İletken renk standartları',
         queries: ['kablo renk kodu tablosu', 'wire color code chart', 'electrical wire colors'],
-        wikimediaCategory: 'SVG_electrical_wiring_and_cables'
+        wikimediaCategory: 'SVG_electrical_wiring_and_cables',
+        suggestedTopic: 'Kablo renk kodları ve işaretleme standartları',
+        suggestedPrompt: 'Bugün elektrik kablolarının renk kodlama standartları öğrenildi. Faz, nötr ve toprak iletkenlerinin renkleri, eski ve yeni standartlar arasındaki farklar incelendi. IEC standartlarına uygun işaretleme yapıldı.'
       }
     ]
   },
@@ -325,28 +337,36 @@ export const PRESET_CATEGORIES: CategoryGroup[] = [
         name: 'Elektrik Tesisat Sembolleri',
         description: 'Anahtar, priz, aydınlatma sembolleri',
         queries: ['elektrik tesisat sembolleri', 'electrical installation symbols', 'wiring diagram symbols'],
-        wikimediaCategory: 'Electrical_symbols'
+        wikimediaCategory: 'Electrical_symbols',
+        suggestedTopic: 'Elektrik tesisat sembolleri eğitimi',
+        suggestedPrompt: 'Bugün elektrik tesisat projelerinde kullanılan semboller öğrenildi. Anahtar, priz, aydınlatma armatürleri ve dağıtım kutusu sembolleri incelendi. Proje okuma ve çizim teknikleri üzerinde çalışıldı.'
       },
       {
         id: 'single-line-symbols',
         name: 'Tek Hat Şeması Sembolleri',
         description: 'Trafo, şalter, bara sembolleri',
         queries: ['tek hat şeması sembolleri', 'single line diagram symbols', 'one line diagram symbols'],
-        wikimediaCategory: 'Single-line_wiring_diagrams_of_distribution_boards'
+        wikimediaCategory: 'Single-line_wiring_diagrams_of_distribution_boards',
+        suggestedTopic: 'Tek hat şeması sembolleri ve okuma teknikleri',
+        suggestedPrompt: 'Bugün tek hat şemalarında kullanılan semboller öğrenildi. Trafo, kesici, ayırıcı, bara ve ölçü trafosu sembolleri incelendi. Gerçek projeler üzerinde şema okuma çalışması yapıldı.'
       },
       {
         id: 'panel-symbols',
         name: 'Pano Sembolleri',
         description: 'Pano içi eleman sembolleri',
         queries: ['elektrik pano sembolleri', 'electrical panel symbols', 'switchboard symbols'],
-        wikimediaCategory: 'Circuit_breaker_symbols'
+        wikimediaCategory: 'Circuit_breaker_symbols',
+        suggestedTopic: 'Elektrik pano sembolleri eğitimi',
+        suggestedPrompt: 'Bugün elektrik panolarında kullanılan semboller öğrenildi. Şalter, kontaktör, röle, sinyal lambası ve buton sembolleri incelendi. Pano yerleşim ve bağlantı şemaları okuma çalışması yapıldı.'
       },
       {
         id: 'protection-symbols',
         name: 'Koruma Cihazları Sembolleri',
         description: 'Röle, kontaktör, termik sembolleri',
         queries: ['koruma cihazları sembolleri', 'protection relay symbols', 'contactor symbols'],
-        wikimediaCategory: 'Electronic_symbols'
+        wikimediaCategory: 'Electronic_symbols',
+        suggestedTopic: 'Koruma cihazları sembolleri ve şemaları',
+        suggestedPrompt: 'Bugün koruma cihazlarının sembolleri öğrenildi. Termik röle, manyetik koruma, aşırı akım rölesi ve kaçak akım koruma sembolleri incelendi. Koruma koordinasyonu şemaları üzerinde çalışıldı.'
       }
     ]
   },
@@ -360,35 +380,45 @@ export const PRESET_CATEGORIES: CategoryGroup[] = [
         name: 'Tek Hat Şeması Örnekleri',
         description: 'Bina ve tesis tek hat şemaları',
         queries: ['tek hat şeması örneği', 'single line diagram example', 'electrical one line diagram'],
-        wikimediaCategory: 'Single-line_wiring_diagrams_of_distribution_boards'
+        wikimediaCategory: 'Single-line_wiring_diagrams_of_distribution_boards',
+        suggestedTopic: 'Tek hat şeması inceleme ve analiz çalışması',
+        suggestedPrompt: 'Bugün gerçek projelerin tek hat şemaları incelendi. Ana dağıtım panosu, tali panolar ve yük dağılımı analiz edildi. Şema üzerinden güç hesaplamaları ve koruma koordinasyonu değerlendirildi.'
       },
       {
         id: 'panel-wiring',
         name: 'Pano İç Bağlantı Şeması',
         description: 'Pano montaj ve bağlantı şemaları',
         queries: ['pano bağlantı şeması', 'panel wiring diagram', 'switchboard connection diagram'],
-        wikimediaCategory: 'Electrical_installations'
+        wikimediaCategory: 'Electrical_installations',
+        suggestedTopic: 'Pano iç bağlantı şemaları inceleme',
+        suggestedPrompt: 'Bugün pano iç bağlantı şemaları üzerinde çalışıldı. Bara bağlantıları, klemens numaralandırma ve kablo yolları incelendi. Şemadan montaj yapma ve hata bulma teknikleri öğrenildi.'
       },
       {
         id: 'grounding',
         name: 'Topraklama Şeması',
         description: 'Topraklama sistem şemaları',
         queries: ['topraklama şeması', 'grounding diagram', 'earthing system diagram TN TT IT'],
-        wikimediaCategory: 'Electrical_diagrams'
+        wikimediaCategory: 'Electrical_diagrams',
+        suggestedTopic: 'Topraklama sistemleri ve şemaları eğitimi',
+        suggestedPrompt: 'Bugün topraklama sistem şemaları incelendi. TN, TT ve IT sistemlerinin farkları, topraklama direnci hesaplamaları ve elektrot yerleşimi öğrenildi. Yönetmelik gereksinimleri değerlendirildi.'
       },
       {
         id: 'compensation',
         name: 'Kompanzasyon Şeması',
         description: 'Reaktif güç kompanzasyonu',
         queries: ['kompanzasyon şeması', 'power factor correction diagram', 'capacitor bank diagram'],
-        wikimediaCategory: 'Electrical_diagrams'
+        wikimediaCategory: 'Electrical_diagrams',
+        suggestedTopic: 'Reaktif güç kompanzasyonu eğitimi',
+        suggestedPrompt: 'Bugün reaktif güç kompanzasyon sistemleri incelendi. Güç faktörü hesaplamaları, kondansatör seçimi ve kompanzasyon panosu bağlantı şemaları öğrenildi. Enerji tasarrufu hesapları yapıldı.'
       },
       {
         id: 'motor-control',
         name: 'Motor Kumanda Devresi',
         description: 'Yıldız üçgen, direkt yol verme',
         queries: ['motor kumanda devresi', 'motor control circuit', 'star delta starter diagram'],
-        wikimediaCategory: 'Circuit_diagrams'
+        wikimediaCategory: 'Circuit_diagrams',
+        suggestedTopic: 'Motor kumanda devreleri eğitimi',
+        suggestedPrompt: 'Bugün motor kumanda devreleri üzerinde çalışıldı. Direkt yol verme, yıldız üçgen ve soft starter devreleri incelendi. Kumanda ve güç devresi şemaları okundu, bağlantı mantığı öğrenildi.'
       }
     ]
   },
@@ -402,28 +432,36 @@ export const PRESET_CATEGORIES: CategoryGroup[] = [
         name: 'Aydınlatma Devresi',
         description: 'Aydınlatma tesisat şemaları',
         queries: ['aydınlatma devresi şeması', 'lighting circuit diagram', 'light switch wiring'],
-        wikimediaCategory: 'Electrical_installations'
+        wikimediaCategory: 'Electrical_installations',
+        suggestedTopic: 'Aydınlatma devre şemaları ve uygulaması',
+        suggestedPrompt: 'Bugün aydınlatma devre şemaları incelendi. Basit anahtar, komütatör, vaevien ve paralel bağlantı şemaları çizildi. Enerji tasarruflu aydınlatma ve hareket sensörlü devreler öğrenildi.'
       },
       {
         id: 'socket-circuit',
         name: 'Priz Devresi',
         description: 'Priz hattı bağlantı şemaları',
         queries: ['priz devresi şeması', 'socket outlet wiring diagram', 'power outlet circuit'],
-        wikimediaCategory: 'Electrical_installations'
+        wikimediaCategory: 'Electrical_installations',
+        suggestedTopic: 'Priz devreleri ve topraklama uygulaması',
+        suggestedPrompt: 'Bugün priz devre şemaları ve bağlantıları incelendi. Topraklı priz montajı, hat kesitleri ve koruma koordinasyonu öğrenildi. Mutfak ve banyo gibi özel mahaller için kurallar değerlendirildi.'
       },
       {
         id: 'rcd-circuit',
         name: 'Kaçak Akım Koruma',
         description: 'RCD/RCCB bağlantı şemaları',
         queries: ['kaçak akım rölesi bağlantısı', 'RCD wiring diagram', 'residual current device'],
-        wikimediaCategory: 'Circuit_diagrams'
+        wikimediaCategory: 'Circuit_diagrams',
+        suggestedTopic: 'Kaçak akım koruma sistemleri eğitimi',
+        suggestedPrompt: 'Bugün kaçak akım koruma cihazları (RCD/RCCB) incelendi. Çalışma prensibi, bağlantı şeması ve test yöntemleri öğrenildi. Seçicilik ve koordinasyon kuralları değerlendirildi.'
       },
       {
         id: 'surge-protection',
         name: 'Parafudr Bağlantısı',
         description: 'Aşırı gerilim koruma',
         queries: ['parafudr bağlantı şeması', 'surge protector wiring', 'SPD connection diagram'],
-        wikimediaCategory: 'Electrical_diagrams'
+        wikimediaCategory: 'Electrical_diagrams',
+        suggestedTopic: 'Aşırı gerilim koruma sistemleri eğitimi',
+        suggestedPrompt: 'Bugün parafudr (SPD) sistemleri incelendi. Tip 1, Tip 2 ve Tip 3 koruma seviyeleri, bağlantı şemaları ve koordinasyon kuralları öğrenildi. Yıldırımdan korunma prensipleri değerlendirildi.'
       }
     ]
   },
@@ -437,21 +475,27 @@ export const PRESET_CATEGORIES: CategoryGroup[] = [
         name: 'Elektrik Uyarı İşaretleri',
         description: 'Tehlike ve uyarı levhaları',
         queries: ['elektrik uyarı işareti', 'electrical warning signs', 'high voltage warning'],
-        wikimediaCategory: 'SVG_electricity_warning_signs'
+        wikimediaCategory: 'SVG_electricity_warning_signs',
+        suggestedTopic: 'Elektrik güvenlik işaretleri eğitimi',
+        suggestedPrompt: 'Bugün elektrik tesislerinde kullanılan güvenlik işaretleri öğrenildi. Tehlike, uyarı ve bilgilendirme levhaları incelendi. İşaretlerin yerleşim kuralları ve standartları değerlendirildi.'
       },
       {
         id: 'safety-symbols',
         name: 'İş Güvenliği Sembolleri',
         description: 'İSG sembolleri ve işaretleri',
         queries: ['iş güvenliği sembolleri', 'occupational safety symbols', 'safety signs electrical'],
-        wikimediaCategory: 'Safety_symbols'
+        wikimediaCategory: 'Safety_symbols',
+        suggestedTopic: 'İş sağlığı ve güvenliği sembolleri eğitimi',
+        suggestedPrompt: 'Bugün iş güvenliği sembolleri ve işaretleri öğrenildi. Yasak, zorunluluk, uyarı ve acil durum işaretleri incelendi. İşyerinde güvenli çalışma prosedürleri değerlendirildi.'
       },
       {
         id: 'ppe',
         name: 'Kişisel Koruyucu Donanım',
         description: 'KKD görselleri',
         queries: ['elektrikçi kişisel koruyucu', 'electrical PPE', 'personal protective equipment electrical'],
-        wikimediaCategory: 'Electrical_safety'
+        wikimediaCategory: 'Electrical_safety',
+        suggestedTopic: 'Kişisel koruyucu donanım (KKD) eğitimi',
+        suggestedPrompt: 'Bugün elektrik çalışmalarında kullanılan kişisel koruyucu donanımlar öğrenildi. İzole eldiven, koruyucu gözlük, iş ayakkabısı ve yüz siperi kullanımı incelendi. KKD seçim ve bakım kuralları değerlendirildi.'
       }
     ]
   }

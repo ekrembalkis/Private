@@ -9,7 +9,7 @@ import { ToastContainer, useToast } from './components/Toast';
 import { ConfirmDialog } from './components/ConfirmDialog';
 import { LoadingScreen } from './components/Skeleton';
 import { generateDayContent, analyzeImage } from './services/geminiService';
-import { searchImages, StockImage, searchByCategory, PRESET_CATEGORIES } from './services/imageService';
+import { searchImages, StockImage, searchByCategory, PRESET_CATEGORIES, CategoryItem } from './services/imageService';
 import { saveDayToFirestore, loadAllDaysFromFirestore, deleteDayFromFirestore, savePlanToFirestore, loadPlanFromFirestore, resetFirestoreData } from './services/firebaseService';
 import { onAuthChange, logOut } from './services/authService';
 import { User } from 'firebase/auth';
@@ -34,6 +34,7 @@ const App: React.FC = () => {
   const [selectedImageType, setSelectedImageType] = useState<string>('autocad');
   const [selectedCategoryGroup, setSelectedCategoryGroup] = useState<string | null>(null);
   const [categorySearching, setCategorySearching] = useState<string | null>(null);
+  const [selectedCategoryItem, setSelectedCategoryItem] = useState<CategoryItem | null>(null);
   const exportMenuRef = useRef<HTMLDivElement>(null);
   
   // Toast Hook
@@ -323,6 +324,7 @@ const App: React.FC = () => {
     setImageSearchResults([]);
     setIsSearchingImages(false);
     setSelectedCategoryGroup(null);
+    setSelectedCategoryItem(null);
   };
 
   const handleSearchWithType = async (imageType: string) => {
@@ -343,6 +345,18 @@ const App: React.FC = () => {
   const handleCategorySearch = async (categoryId: string) => {
     setCategorySearching(categoryId);
     setIsSearchingImages(true);
+
+    // Kategori bilgisini bul ve sakla
+    let foundCategory: CategoryItem | null = null;
+    for (const group of PRESET_CATEGORIES) {
+      const found = group.items.find(item => item.id === categoryId);
+      if (found) {
+        foundCategory = found;
+        break;
+      }
+    }
+    setSelectedCategoryItem(foundCategory);
+    
     try {
       const results = await searchByCategory(categoryId, 15);
       setImageSearchResults(results);
@@ -377,6 +391,19 @@ const App: React.FC = () => {
           imageAnalysis: imageAnalysis,
           imageSource: 'stock' as const,
         };
+
+        // Kategori seçildiyse otomatik konu ve prompt ayarla
+        if (selectedCategoryItem) {
+          updatedDay.specificTopic = selectedCategoryItem.suggestedTopic;
+          
+          const existingPrompt = updatedDay.customPrompt || '';
+          if (!existingPrompt.includes(selectedCategoryItem.suggestedPrompt)) {
+            updatedDay.customPrompt = existingPrompt 
+              ? existingPrompt + '\n\n' + selectedCategoryItem.suggestedPrompt
+              : selectedCategoryItem.suggestedPrompt;
+          }
+        }
+
         if (d.isSaved) {
           saveDayToFirestore(updatedDay);
         }
@@ -385,9 +412,15 @@ const App: React.FC = () => {
       return d;
     });
     setDays(finalDays);
+
+    if (selectedCategoryItem) {
+      success('Otomatik Ayarlandı', `Konu ve prompt güncellendi: ${selectedCategoryItem.name}`);
+    }
+
     setShowImagePicker(false);
     setImagePickerDay(null);
     setImageSearchResults([]);
+    setSelectedCategoryItem(null);
   };
 
   const handleSave = async (day: DayEntry) => {
@@ -905,7 +938,7 @@ const App: React.FC = () => {
                 <p className="text-sm text-zinc-500">Gün {imagePickerDay?.dayNumber}: {imagePickerDay?.specificTopic}</p>
               </div>
               <button 
-                onClick={() => { setShowImagePicker(false); setImagePickerDay(null); setImageSearchResults([]); setSelectedCategoryGroup(null); }}
+                onClick={() => { setShowImagePicker(false); setImagePickerDay(null); setImageSearchResults([]); setSelectedCategoryGroup(null); setSelectedCategoryItem(null); }}
                 className="p-2 text-zinc-400 hover:text-white hover:bg-zinc-800 rounded-lg transition-colors"
               >
                 <X className="w-5 h-5" />
