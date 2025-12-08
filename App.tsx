@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { generateDayList } from './utils/dateUtils';
 import { DayEntry, InternshipType } from './types';
@@ -9,6 +10,7 @@ import { ToastContainer, useToast } from './components/Toast';
 import { ConfirmDialog } from './components/ConfirmDialog';
 import { LoadingScreen } from './components/Skeleton';
 import { ImageAnalysisModal } from './components/ImageAnalysisModal';
+import { VisualGuideModal } from './components/VisualGuideModal';
 import { generateDayContent, analyzeImage } from './services/geminiService';
 import { searchImages, StockImage, searchByCategory, PRESET_CATEGORIES, CategoryItem } from './services/imageService';
 import { ImageAnalysisResult } from './services/imageAnalysisService';
@@ -41,6 +43,11 @@ const App: React.FC = () => {
   // Image Analysis State
   const [imageAnalysisOpen, setImageAnalysisOpen] = useState(false);
   const [imageAnalysisDay, setImageAnalysisDay] = useState<number | null>(null);
+
+  // Visual Guide State
+  const [visualGuideState, setVisualGuideState] = useState<{isOpen: boolean, topic: string, dayNumber: number}>({
+      isOpen: false, topic: '', dayNumber: 0
+  });
 
   const exportMenuRef = useRef<HTMLDivElement>(null);
   
@@ -339,6 +346,14 @@ const App: React.FC = () => {
     setImageAnalysisDay(dayNumber);
     setImageAnalysisOpen(true);
     setShowImagePicker(false); // Picker açıksa kapat
+  };
+
+  const handleOpenVisualGuide = (day: DayEntry) => {
+    setVisualGuideState({
+        isOpen: true,
+        topic: day.specificTopic,
+        dayNumber: day.dayNumber
+    });
   };
 
   // Yeni handler: Analiz sonucu görseli kullan
@@ -961,6 +976,7 @@ Teknik Açıklama: ${result.technicalDescription}
                                 onUpdatePlan={handleUpdatePlan}
                                 onSearchImage={handleOpenImagePicker}
                                 onImageClick={setSelectedImage}
+                                onOpenVisualGuide={handleOpenVisualGuide}
                             />
                         ))}
                     </div>
@@ -1207,6 +1223,14 @@ Teknik Açıklama: ${result.technicalDescription}
         }}
         onUseImage={handleImageAnalysisUse}
         dayNumber={imageAnalysisDay || 1}
+      />
+
+      {/* Visual Guide Modal */}
+      <VisualGuideModal 
+          isOpen={visualGuideState.isOpen}
+          onClose={() => setVisualGuideState(prev => ({ ...prev, isOpen: false }))}
+          topic={visualGuideState.topic}
+          dayNumber={visualGuideState.dayNumber}
       />
     </div>
   );

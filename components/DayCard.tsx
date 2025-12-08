@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { DayEntry, InternshipType } from '../types';
-import { RefreshCw, Camera, PenTool, Loader2, Calendar, ChevronRight, Save, CheckCircle2, CloudUpload, Trash2, Copy, Check, Pencil, X, ChevronDown, ImagePlus, Sparkles, Image as ImageIcon } from 'lucide-react';
+import { RefreshCw, Camera, PenTool, Loader2, Calendar, ChevronRight, Save, CheckCircle2, CloudUpload, Trash2, Copy, Check, Pencil, X, ChevronDown, ImagePlus, Sparkles, Image as ImageIcon, Lightbulb } from 'lucide-react';
 import { PRODUCTION_TOPICS, MANAGEMENT_TOPICS } from '../constants';
 
 interface DayCardProps {
@@ -13,6 +13,7 @@ interface DayCardProps {
   onUpdatePlan: (day: DayEntry, newType: InternshipType, newTopic: string, customPrompt: string) => Promise<void>;
   onSearchImage: (day: DayEntry) => Promise<void>;
   onImageClick: (imageUrl: string) => void;
+  onOpenVisualGuide: (day: DayEntry) => void;
   isLast: boolean;
 }
 
@@ -24,6 +25,7 @@ export const DayCard: React.FC<DayCardProps> = ({
   onUpdatePlan, 
   onSearchImage,
   onImageClick,
+  onOpenVisualGuide,
   isLast 
 }) => {
   const [isSaving, setIsSaving] = useState(false);
@@ -302,10 +304,20 @@ export const DayCard: React.FC<DayCardProps> = ({
                      <div className="absolute left-0 top-0 bottom-0 w-1 bg-purple-500/50"></div>
                      
                      <div className="flex flex-col gap-4">
-                        <h4 className="text-xs font-bold text-purple-400 uppercase tracking-wide flex items-center gap-1.5">
-                          <Camera className="w-3.5 h-3.5" /> 
-                          {day.imageUrl ? 'Seçilen Görsel' : 'Görsel Seç'}
-                        </h4>
+                        <div className="flex items-center justify-between">
+                            <h4 className="text-xs font-bold text-purple-400 uppercase tracking-wide flex items-center gap-1.5">
+                              <Camera className="w-3.5 h-3.5" /> 
+                              {day.imageUrl ? 'Seçilen Görsel' : 'Görsel Seç'}
+                            </h4>
+                            
+                            <button 
+                                onClick={() => onOpenVisualGuide(day)}
+                                className="text-[10px] text-white hover:bg-amber-600 flex items-center gap-1 bg-amber-500 px-2.5 py-1.5 rounded-lg shadow-sm transition-colors"
+                            >
+                                <Camera className="w-3 h-3" />
+                                Görsel Rehberi
+                            </button>
+                        </div>
                         
                         {day.imageUrl ? (
                           <div className="flex items-center gap-4">
@@ -348,6 +360,16 @@ export const DayCard: React.FC<DayCardProps> = ({
                 <div className="flex flex-col items-center gap-1 mb-6">
                   <span className="px-2 py-0.5 rounded text-[10px] font-mono bg-zinc-800 text-zinc-500 border border-zinc-700">GÖREV BEKLİYOR</span>
                   <span className="text-sm font-medium text-zinc-400 text-center max-w-xs">{day.specificTopic}</span>
+                  
+                  {day.hasVisual && (
+                    <button 
+                        onClick={() => onOpenVisualGuide(day)}
+                        className="text-[10px] text-white hover:bg-amber-600 flex items-center gap-1.5 mt-2 bg-amber-500 px-3 py-1.5 rounded-full shadow-lg shadow-amber-900/20 transition-all"
+                    >
+                        <Camera className="w-3 h-3" />
+                        <span>Görsel Rehberi</span>
+                    </button>
+                  )}
                 </div>
 
                 {/* Workflow Logic: Visual First */}

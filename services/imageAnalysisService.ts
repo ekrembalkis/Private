@@ -1,10 +1,15 @@
 // services/imageAnalysisService.ts
 // Görsel Analiz Servisi - Gemini 3 Pro + YouTube API
 
-import { GoogleGenAI } from "@google/genai";
-
 // YouTube API Key
 const YOUTUBE_API_KEY = 'AIzaSyDuXDx7djLjPGtA9Rsbh85igk4dy2eHCvI';
+
+// Model listesi - sırayla denenecek
+const MODELS = [
+  'gemini-3-pro-preview',
+  'gemini-2.5-pro-preview-05-06',
+  'gemini-2.0-flash'
+];
 
 // Analiz sonuç tipleri
 export interface ImageAnalysisResult {
@@ -63,8 +68,6 @@ export const analyzeImage = async (
     throw new Error('Gemini API key not configured');
   }
 
-  const ai = new GoogleGenAI({ apiKey });
-
   const prompt = `Sen bir elektrik mühendisliği staj defteri uzmanısın. Bu görseli analiz et ve aşağıdaki bilgileri JSON formatında döndür.
 
 GÖREV:
@@ -96,55 +99,80 @@ JSON FORMATI:
 - Kalite değerlendirmesi: çözünürlük, okunabilirlik, profesyonellik
 - Türkçe içerik üret`;
 
-  try {
-    let responseContent = '';
+  let lastError: Error | null = null;
 
-    const responseStream = await ai.models.generateContentStream({
-      model: 'gemini-3-pro-preview',
-      contents: [
+  // Her modeli sırayla dene
+  for (const modelName of MODELS) {
+    try {
+      console.log(`Trying model: ${modelName}`);
+      
+      if (onThinkingUpdate) {
+        onThinkingUpdate(`${modelName} modeli ile analiz ediliyor...`);
+      }
+
+      const response = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${apiKey}`,
         {
-          role: 'user',
-          parts: [
-            { text: prompt },
-            {
-              inlineData: {
-                mimeType: mimeType,
-                data: imageBase64
-              }
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            contents: [{
+              parts: [
+                { text: prompt },
+                {
+                  inlineData: {
+                    mimeType: mimeType,
+                    data: imageBase64
+                  }
+                }
+              ]
+            }],
+            generationConfig: {
+              temperature: 0.7,
+              maxOutputTokens: 4096
             }
-          ]
+          })
         }
-      ],
-      config: {
-        temperature: 0.7,
-        maxOutputTokens: 4096
+      );
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error(`Model ${modelName} failed:`, errorData);
+        
+        // 503 veya 429 ise sonraki modele geç
+        if (response.status === 503 || response.status === 429) {
+          lastError = new Error(`${modelName}: ${errorData.error?.message || 'Service unavailable'}`);
+          continue;
+        }
+        throw new Error(errorData.error?.message || 'API error');
       }
-    });
 
-    for await (const chunk of responseStream) {
-      const text = chunk.text;
-      if (text) {
-        responseContent += text;
+      const data = await response.json();
+      const responseText = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+
+      // JSON parse
+      const jsonMatch = responseText.match(/\{[\s\S]*\}/);
+      if (!jsonMatch) {
+        throw new Error('Invalid JSON response');
       }
+
+      const result = JSON.parse(jsonMatch[0]);
+      
+      return {
+        ...result,
+        thinkingProcess: `✅ ${modelName} modeli ile analiz tamamlandı.`
+      };
+
+    } catch (error) {
+      console.error(`Model ${modelName} error:`, error);
+      lastError = error as Error;
+      // Sonraki modele geç
+      continue;
     }
-
-    // JSON parse
-    const jsonMatch = responseContent.match(/\{[\s\S]*\}/);
-    if (!jsonMatch) {
-      throw new Error('Invalid JSON response from Gemini');
-    }
-
-    const result = JSON.parse(jsonMatch[0]);
-    
-    return {
-      ...result,
-      thinkingProcess: '' // Thinking process is currently not available via this SDK method
-    };
-
-  } catch (error) {
-    console.error('Image analysis failed:', error);
-    throw error;
   }
+
+  // Tüm modeller başarısız oldu
+  throw lastError || new Error('Tüm modeller başarısız oldu. Lütfen daha sonra tekrar deneyin.');
 };
 
 // YouTube video arama
