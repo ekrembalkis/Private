@@ -8,8 +8,10 @@ import { BatchProgress } from './components/BatchProgress';
 import { ToastContainer, useToast } from './components/Toast';
 import { ConfirmDialog } from './components/ConfirmDialog';
 import { LoadingScreen } from './components/Skeleton';
+import { ImageAnalysisModal } from './components/ImageAnalysisModal';
 import { generateDayContent, analyzeImage } from './services/geminiService';
 import { searchImages, StockImage, searchByCategory, PRESET_CATEGORIES, CategoryItem } from './services/imageService';
+import { ImageAnalysisResult } from './services/imageAnalysisService';
 import { saveDayToFirestore, loadAllDaysFromFirestore, deleteDayFromFirestore, savePlanToFirestore, loadPlanFromFirestore, resetFirestoreData } from './services/firebaseService';
 import { onAuthChange, logOut } from './services/authService';
 import { User } from 'firebase/auth';
@@ -35,6 +37,11 @@ const App: React.FC = () => {
   const [selectedCategoryGroup, setSelectedCategoryGroup] = useState<string | null>(null);
   const [categorySearching, setCategorySearching] = useState<string | null>(null);
   const [selectedCategoryItem, setSelectedCategoryItem] = useState<CategoryItem | null>(null);
+  
+  // Image Analysis State
+  const [imageAnalysisOpen, setImageAnalysisOpen] = useState(false);
+  const [imageAnalysisDay, setImageAnalysisDay] = useState<number | null>(null);
+
   const exportMenuRef = useRef<HTMLDivElement>(null);
   
   // Toast Hook
@@ -325,6 +332,48 @@ const App: React.FC = () => {
     setIsSearchingImages(false);
     setSelectedCategoryGroup(null);
     setSelectedCategoryItem(null);
+  };
+
+  // Yeni fonksiyon: Görsel Analiz Modalını aç
+  const openImageAnalysis = (dayNumber: number) => {
+    setImageAnalysisDay(dayNumber);
+    setImageAnalysisOpen(true);
+    setShowImagePicker(false); // Picker açıksa kapat
+  };
+
+  // Yeni handler: Analiz sonucu görseli kullan
+  const handleImageAnalysisUse = (result: ImageAnalysisResult, imageUrl: string) => {
+    if (imageAnalysisDay === null) return;
+    
+    const updatedDays = [...days];
+    const dayIndex = updatedDays.findIndex(d => d.dayNumber === imageAnalysisDay);
+    
+    if (dayIndex !== -1) {
+      // Görseli ayarla
+      updatedDays[dayIndex].imageUrl = imageUrl;
+      updatedDays[dayIndex].imageSource = 'stock'; // or 'ai' if uploaded
+      
+      // Konuyu ayarla
+      updatedDays[dayIndex].specificTopic = result.suggestedTopic;
+      updatedDays[dayIndex].topic = result.suggestedTopic; // Optional, keep sync
+      
+      // Custom prompt'a analiz bilgilerini ekle
+      const analysisPrompt = `
+[Görsel Analiz Sonucu]
+Görsel Türü: ${result.imageType}
+Tespit Edilen Elemanlar: ${result.detectedElements.join(', ')}
+Teknik Açıklama: ${result.technicalDescription}
+Önerilen İçerik: ${result.suggestedContent}
+`;
+      updatedDays[dayIndex].customPrompt = analysisPrompt;
+      updatedDays[dayIndex].imageAnalysis = result.technicalDescription;
+      
+      setDays(updatedDays);
+      success('Başarılı', 'Görsel ve konu analiz sonucuna göre ayarlandı!');
+    }
+    
+    setImageAnalysisOpen(false);
+    setImageAnalysisDay(null);
   };
 
   const handleSearchWithType = async (imageType: string) => {
@@ -948,7 +997,25 @@ const App: React.FC = () => {
             <div className="flex-1 overflow-y-auto p-4">
               {!isSearchingImages && imageSearchResults.length === 0 && (
                 <div className="p-4 space-y-4">
-                  <p className="text-sm text-zinc-400 text-center">Aramak istediğiniz görsel tipini seçin:</p>
+                  {/* AI Analysis Option */}
+                  <div className="mb-6 p-4 bg-purple-500/10 border border-purple-500/20 rounded-xl flex items-center justify-between">
+                    <div>
+                      <h4 className="text-sm font-bold text-purple-400 flex items-center gap-2">
+                        <span className="text-lg">🧠</span> AI Görsel Analizi
+                      </h4>
+                      <p className="text-xs text-zinc-400 mt-1">
+                        Kendi görselinizi yükleyin, AI analiz etsin ve günü yazsın.
+                      </p>
+                    </div>
+                    <button
+                      onClick={() => openImageAnalysis(imagePickerDay!.dayNumber)}
+                      className="px-4 py-2 bg-purple-600 hover:bg-purple-500 text-white rounded-lg text-xs font-bold transition-all flex items-center gap-2 shadow-lg shadow-purple-900/20"
+                    >
+                      🔍 Görsel Analiz
+                    </button>
+                  </div>
+
+                  <p className="text-sm text-zinc-400 text-center">Veya aramak istediğiniz görsel tipini seçin:</p>
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                     <button
                       onClick={() => { setSelectedImageType('autocad'); handleSearchWithType('autocad'); }}
@@ -1130,6 +1197,17 @@ const App: React.FC = () => {
           onCancel={closeConfirm}
         />
       )}
+
+      {/* Image Analysis Modal */}
+      <ImageAnalysisModal
+        isOpen={imageAnalysisOpen}
+        onClose={() => {
+          setImageAnalysisOpen(false);
+          setImageAnalysisDay(null);
+        }}
+        onUseImage={handleImageAnalysisUse}
+        dayNumber={imageAnalysisDay || 1}
+      />
     </div>
   );
 };
