@@ -1,20 +1,24 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { generateDayList } from './utils/dateUtils';
 import { DayEntry, InternshipType } from './types';
 import { Stats } from './components/Stats';
 import { DayCard } from './components/DayCard';
+import { LoginScreen } from './components/LoginScreen';
 import { generateDayContent, analyzeImage } from './services/geminiService';
 import { searchImages, StockImage } from './services/imageService';
 import { saveDayToFirestore, loadAllDaysFromFirestore, deleteDayFromFirestore, savePlanToFirestore, loadPlanFromFirestore, resetFirestoreData } from './services/firebaseService';
-import { Wand2, Download, AlertTriangle, Terminal, FileText, FileType, ChevronDown, CheckCircle2, RotateCcw, Trash2, X, Loader2 } from 'lucide-react';
+import { onAuthChange, logOut } from './services/authService';
+import { User } from 'firebase/auth';
+import { Wand2, Download, AlertTriangle, Terminal, FileText, FileType, ChevronDown, CheckCircle2, RotateCcw, Trash2, X, Loader2, LogOut, User as UserIcon } from 'lucide-react';
 import { STUDENT_INFO, COMPANY_INFO } from './constants';
 import { Document, Packer, Paragraph, TextRun, HeadingLevel, AlignmentType, ImageRun } from 'docx';
 import { pdf } from '@react-pdf/renderer';
 import { StajDefteriPDF } from './services/pdfService';
 
 const App: React.FC = () => {
+  const [user, setUser] = useState<User | null>(null);
+  const [authLoading, setAuthLoading] = useState(true);
   const [days, setDays] = useState<DayEntry[]>([]);
-  const [isGeneratingAll, setIsGeneratingAll] = useState(false);
   const [isLoadingFromDb, setIsLoadingFromDb] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showExportMenu, setShowExportMenu] = useState(false);
@@ -26,9 +30,21 @@ const App: React.FC = () => {
   const [selectedImageType, setSelectedImageType] = useState<string>('autocad');
   const exportMenuRef = useRef<HTMLDivElement>(null);
 
+  // Auth Listener
   useEffect(() => {
-    // Initialize Data Logic
+    const unsubscribe = onAuthChange((currentUser) => {
+      setUser(currentUser);
+      setAuthLoading(false);
+    });
+    return () => unsubscribe();
+  }, []);
+
+  // Data Initialization
+  useEffect(() => {
+    if (!user) return;
+
     const initializeData = async () => {
+        setIsLoadingFromDb(true);
         try {
             // 1. Try to load existing PLAN from Firestore
             let baseDays = await loadPlanFromFirestore();
@@ -83,7 +99,7 @@ const App: React.FC = () => {
     };
 
     initializeData();
-  }, []);
+  }, [user]);
 
   // Close export menu when clicking outside
   useEffect(() => {
@@ -95,6 +111,15 @@ const App: React.FC = () => {
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
+
+  const handleLogout = async () => {
+    try {
+      await logOut();
+      setDays([]);
+    } catch (error) {
+      console.error('Logout error:', error);
+    }
+  };
 
   const handleRegenerate = async (day: DayEntry) => {
     // Guard: If day has visual but no image URL is selected, prevent generation
@@ -274,78 +299,168 @@ const App: React.FC = () => {
   const handleExport = async () => {
     const savedDays = days.filter(d => d.isSaved && d.isGenerated);
     if (savedDays.length === 0) {
-        alert("Dışa aktarılacak kaydedilmiş gün bulunamadı.");
-        return;
+      alert("Dışa aktarılacak kaydedilmiş gün bulunamadı.");
+      return;
     }
-
+  
+    // Görsel URL'lerini base64'e çevir (CORS sorunlarını çözmek için)
+    const fetchImageAsBase64 = async (url: string): Promise<ArrayBuffer | null> => {
+      try {
+        // Proxy kullanarak CORS bypass
+        const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`;
+        const response = await fetch(proxyUrl);
+        if (!response.ok) return null;
+        return await response.arrayBuffer();
+      } catch (error) {
+        console.error('Image fetch failed:', error);
+        return null;
+      }
+    };
+  
+    // Tüm günler için içerik oluştur
+    const dayContents = await Promise.all(savedDays.map(async (day) => {
+      const paragraphs: any[] = [
+        new Paragraph({
+          children: [
+            new TextRun({ text: `GÜN ${day.dayNumber}`, bold: true, size: 28 }),
+            new TextRun({ text: ` - ${day.date}`, size: 24, color: "666666" }),
+          ],
+          spacing: { before: 400, after: 100 },
+          border: {
+            bottom: { color: "1e40af", size: 6, style: "single", space: 1 }
+          }
+        }),
+        new Paragraph({
+          children: [
+            new TextRun({ text: "Staj Türü: ", bold: true }),
+            new TextRun({ text: day.type === InternshipType.PRODUCTION_DESIGN ? "Üretim/Tasarım" : "İşletme" }),
+          ],
+          spacing: { after: 100 }
+        }),
+        new Paragraph({
+          children: [
+            new TextRun({ text: "ÇALIŞMA RAPORU: ", bold: true, color: "1e40af" }),
+            new TextRun({ text: day.workTitle || day.specificTopic, bold: true })
+          ],
+          spacing: { after: 200 }
+        }),
+      ];
+  
+      // İçerik paragrafları
+      const contentParagraphs = day.content.split('\n\n').filter(p => p.trim());
+      contentParagraphs.forEach(para => {
+        paragraphs.push(
+          new Paragraph({
+            text: para.trim(),
+            spacing: { after: 150 },
+            alignment: AlignmentType.JUSTIFIED
+          })
+        );
+      });
+  
+      // Görsel varsa ekle
+      if (day.imageUrl) {
+        const imageBuffer = await fetchImageAsBase64(day.imageUrl);
+        if (imageBuffer) {
+          paragraphs.push(
+            new Paragraph({
+              children: [
+                new ImageRun({
+                  data: imageBuffer,
+                  transformation: { width: 400, height: 300 },
+                  type: 'png'
+                })
+              ],
+              alignment: AlignmentType.CENTER,
+              spacing: { before: 200, after: 100 }
+            })
+          );
+          
+          if (day.visualDescription) {
+            paragraphs.push(
+              new Paragraph({
+                children: [
+                  new TextRun({ text: day.visualDescription, italics: true, size: 20, color: "666666" })
+                ],
+                alignment: AlignmentType.CENTER,
+                spacing: { after: 200 }
+              })
+            );
+          }
+        }
+      }
+  
+      // Ayırıcı çizgi
+      paragraphs.push(
+        new Paragraph({
+          text: "",
+          border: {
+            bottom: { color: "cccccc", size: 1, style: "single", space: 1 }
+          },
+          spacing: { before: 200, after: 200 }
+        })
+      );
+  
+      return paragraphs;
+    }));
+  
     const doc = new Document({
-        sections: [{
-            properties: {},
+      sections: [{
+        properties: {},
+        children: [
+          // Başlık sayfası
+          new Paragraph({
+            text: "STAJ DEFTERİ",
+            heading: HeadingLevel.TITLE,
+            alignment: AlignmentType.CENTER,
+            spacing: { after: 200 }
+          }),
+          new Paragraph({
+            text: "2. Staj (Üretim/Tasarım/İşletme)",
+            alignment: AlignmentType.CENTER,
+            spacing: { after: 400 }
+          }),
+          new Paragraph({
             children: [
-                new Paragraph({
-                    text: "STAJ DEFTERİ",
-                    heading: HeadingLevel.HEADING_1,
-                    alignment: AlignmentType.CENTER,
-                    spacing: { after: 400 }
-                }),
-                new Paragraph({
-                    text: `Öğrenci: ${STUDENT_INFO.name} (${STUDENT_INFO.studentId})`,
-                    alignment: AlignmentType.CENTER
-                }),
-                new Paragraph({
-                    text: `Firma: ${COMPANY_INFO.name}`,
-                    alignment: AlignmentType.CENTER,
-                    spacing: { after: 800 }
-                }),
-                ...savedDays.flatMap(day => [
-                    new Paragraph({
-                        text: `GÜN ${day.dayNumber} - ${day.date}`,
-                        heading: HeadingLevel.HEADING_2,
-                        spacing: { before: 400, after: 200 }
-                    }),
-                    new Paragraph({
-                        children: [
-                            new TextRun({ text: "KONU: ", bold: true }),
-                            new TextRun(day.workTitle || day.specificTopic)
-                        ],
-                        spacing: { after: 200 }
-                    }),
-                    new Paragraph({
-                        text: day.content,
-                        spacing: { after: 200 }
-                    }),
-                    // Add Image if exists
-                    ...(day.imageUrl ? [
-                        new Paragraph({
-                            children: [
-                                new TextRun({ text: `[Görsel: ${day.visualDescription || 'Staj görseli'}]`, italics: true, size: 20, color: "666666" })
-                            ],
-                            spacing: { after: 200 }
-                        })
-                    ] : []),
-                    new Paragraph({
-                        text: "________________________________________________",
-                        alignment: AlignmentType.CENTER,
-                        spacing: { before: 200, after: 200 }
-                    })
-                ])
-            ]
-        }]
+              new TextRun({ text: "Öğrenci: ", bold: true }),
+              new TextRun(`${STUDENT_INFO.name} (${STUDENT_INFO.studentId})`),
+            ],
+            alignment: AlignmentType.CENTER
+          }),
+          new Paragraph({
+            children: [
+              new TextRun({ text: "Bölüm: ", bold: true }),
+              new TextRun(STUDENT_INFO.department),
+            ],
+            alignment: AlignmentType.CENTER
+          }),
+          new Paragraph({
+            children: [
+              new TextRun({ text: "Firma: ", bold: true }),
+              new TextRun(COMPANY_INFO.name),
+            ],
+            alignment: AlignmentType.CENTER,
+            spacing: { after: 800 }
+          }),
+          // Tüm günlerin içerikleri
+          ...dayContents.flat()
+        ]
+      }]
     });
-
+  
     try {
-        const blob = await Packer.toBlob(doc);
-        const url = window.URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `Staj_Defteri_${STUDENT_INFO.name.replace(' ', '_')}.docx`;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        window.URL.revokeObjectURL(url);
+      const blob = await Packer.toBlob(doc);
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `Staj_Defteri_${STUDENT_INFO.name.replace(' ', '_')}.docx`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
     } catch (err) {
-        console.error("Export failed", err);
-        alert("Word dosyası oluşturulurken hata çıktı.");
+      console.error("Export failed", err);
+      alert("Word dosyası oluşturulurken hata çıktı.");
     }
   };
 
@@ -372,11 +487,28 @@ const App: React.FC = () => {
     }
   };
 
+  // Auth Loading Screen
+  if (authLoading) {
+    return (
+       <div className="min-h-screen bg-zinc-950 flex flex-col items-center justify-center gap-4">
+          <Loader2 className="w-8 h-8 text-blue-500 animate-spin" />
+          <p className="text-zinc-500 font-mono text-xs">AUTHENTICATING...</p>
+       </div>
+    );
+  }
+
+  // Not Authenticated -> Show Login
+  if (!user) {
+    return <LoginScreen onLoginSuccess={() => {}} />;
+  }
+
+  // App Loading Screen (Data Fetching)
   if (isLoadingFromDb) {
      return (
         <div className="min-h-screen bg-zinc-950 flex flex-col items-center justify-center gap-4">
            <div className="w-16 h-16 border-4 border-blue-500/30 border-t-blue-500 rounded-full animate-spin"></div>
            <p className="text-zinc-400 font-mono animate-pulse">SİSTEM BAŞLATILIYOR...</p>
+           <p className="text-zinc-600 text-xs">{user.email}</p>
         </div>
      );
   }
@@ -407,11 +539,19 @@ const App: React.FC = () => {
              </div>
           </div>
           
-          <div className="flex items-center gap-3">
-             <a href="https://console.firebase.google.com/" target="_blank" rel="noreferrer" className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-xs text-zinc-400 transition-colors">
-                <div className="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></div>
-                Database
-             </a>
+          <div className="flex items-center gap-2">
+            <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-lg bg-zinc-800 text-xs text-zinc-400">
+              <UserIcon className="w-3.5 h-3.5" />
+              <span className="max-w-[120px] truncate">{user.displayName || user.email}</span>
+            </div>
+            <button
+              onClick={handleLogout}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-zinc-800 hover:bg-red-900/30 hover:text-red-400 text-zinc-400 text-xs transition-colors"
+              title="Çıkış Yap"
+            >
+              <LogOut className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">Çıkış</span>
+            </button>
           </div>
         </div>
       </header>

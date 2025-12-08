@@ -1,6 +1,7 @@
 
 import { initializeApp, getApps, getApp } from "firebase/app";
-import { getFirestore, doc, setDoc, getDocs, getDoc, collection, deleteDoc, writeBatch } from "firebase/firestore";
+import { getFirestore, doc, setDoc, getDocs, getDoc, collection, deleteDoc } from "firebase/firestore";
+import { getAuth } from "firebase/auth";
 import { DayEntry } from "../types";
 
 const firebaseConfig = {
@@ -15,10 +16,7 @@ const firebaseConfig = {
 // Initialize Firebase (Singleton pattern)
 const app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
 const db = getFirestore(app);
-
-const COLLECTION_NAME = "days";
-const CONFIG_COLLECTION = "config";
-const PLAN_DOC_ID = "plan";
+export const auth = getAuth(app);
 
 // Helper to remove undefined fields which Firestore doesn't support
 const cleanUndefinedFields = (obj: any): any => {
@@ -31,114 +29,130 @@ const cleanUndefinedFields = (obj: any): any => {
   return cleaned;
 };
 
-export const saveDayToFirestore = async (day: DayEntry): Promise<boolean> => {
-  try {
-    const docId = `day-${day.dayNumber}`;
-    // Prepare data object
-    const dayData = {
-      ...day,
-      isSaved: true,
-      isLoading: false,
-      isImageLoading: false
-    };
+// --- User Specific Helpers ---
 
-    // Clean undefined fields before sending to Firestore
-    const cleanedData = cleanUndefinedFields(dayData);
-
-    await setDoc(doc(db, COLLECTION_NAME, docId), cleanedData, { merge: true });
-    return true;
-  } catch (error) {
-    console.error("Error saving day to Firestore:", error);
-    return false;
-  }
+// Kullanıcı ID'sini al
+const getUserId = (): string => {
+  const user = auth.currentUser;
+  if (!user) throw new Error('Kullanıcı giriş yapmamış');
+  return user.uid;
 };
 
-export const loadAllDaysFromFirestore = async (): Promise<DayEntry[]> => {
-  try {
-    const querySnapshot = await getDocs(collection(db, COLLECTION_NAME));
-    const days: DayEntry[] = [];
-    querySnapshot.forEach((doc) => {
-      days.push(doc.data() as DayEntry);
-    });
-    return days;
-  } catch (error) {
-    console.error("Error loading days from Firestore:", error);
-    return [];
-  }
+// Kullanıcıya özel collection referansı
+const getUserCollection = (collectionName: string) => {
+  const userId = getUserId();
+  return collection(db, 'users', userId, collectionName);
 };
 
-export const deleteDayFromFirestore = async (dayNumber: number): Promise<boolean> => {
-  try {
-    const docId = `day-${dayNumber}`;
-    await deleteDoc(doc(db, COLLECTION_NAME, docId));
-    return true;
-  } catch (error) {
-    console.error("Error deleting day from Firestore:", error);
-    return false;
-  }
+// Kullanıcıya özel document referansı
+const getUserDoc = (collectionName: string, docId: string) => {
+  const userId = getUserId();
+  return doc(db, 'users', userId, collectionName, docId);
 };
 
+// --- CRUD Operations ---
+
+// Plan kaydetme
 export const savePlanToFirestore = async (days: DayEntry[]): Promise<boolean> => {
   try {
-    // Extract only structural info needed for the plan
+    const planRef = getUserDoc('data', 'plan');
     const planData = days.map(d => ({
       dayNumber: d.dayNumber,
       date: d.date,
       type: d.type,
       specificTopic: d.specificTopic,
+      customPrompt: d.customPrompt || '',
       hasVisual: d.hasVisual,
-      topic: d.topic
+      topic: d.topic || ''
     }));
-
-    await setDoc(doc(db, CONFIG_COLLECTION, PLAN_DOC_ID), { days: planData });
+    
+    await setDoc(planRef, { days: planData, updatedAt: new Date().toISOString() });
     return true;
   } catch (error) {
-    console.error("Error saving plan to Firestore:", error);
+    console.error("Error saving plan:", error);
     return false;
   }
 };
 
+// Plan yükleme
 export const loadPlanFromFirestore = async (): Promise<DayEntry[] | null> => {
   try {
-    const docRef = doc(db, CONFIG_COLLECTION, PLAN_DOC_ID);
-    const docSnap = await getDoc(docRef);
-
-    if (docSnap.exists()) {
-      const data = docSnap.data();
-      return data.days as DayEntry[];
-    } else {
-      return null;
+    const planRef = getUserDoc('data', 'plan');
+    const planSnap = await getDoc(planRef);
+    if (planSnap.exists()) {
+      return planSnap.data().days as DayEntry[];
     }
+    return null;
   } catch (error) {
-    console.error("Error loading plan from Firestore:", error);
+    console.error("Error loading plan:", error);
     return null;
   }
 };
 
+// Gün kaydetme
+export const saveDayToFirestore = async (day: DayEntry): Promise<boolean> => {
+  try {
+    const dayRef = getUserDoc('entries', `day-${day.dayNumber}`);
+    
+    const dayData = {
+      ...day,
+      isSaved: true,
+      isLoading: false,
+      isImageLoading: false,
+      updatedAt: new Date().toISOString()
+    };
+
+    // Firestore undefined sevmez, temizleyelim
+    const cleanedData = cleanUndefinedFields(dayData);
+
+    await setDoc(dayRef, cleanedData);
+    return true;
+  } catch (error) {
+    console.error("Error saving day:", error);
+    return false;
+  }
+};
+
+// Tüm günleri yükle
+export const loadAllDaysFromFirestore = async (): Promise<DayEntry[]> => {
+  try {
+    const entriesRef = getUserCollection('entries');
+    const snapshot = await getDocs(entriesRef);
+    return snapshot.docs.map(doc => doc.data() as DayEntry);
+  } catch (error) {
+    console.error("Error loading days:", error);
+    return [];
+  }
+};
+
+// Gün silme
+export const deleteDayFromFirestore = async (dayNumber: number): Promise<boolean> => {
+  try {
+    const dayRef = getUserDoc('entries', `day-${dayNumber}`);
+    await deleteDoc(dayRef);
+    return true;
+  } catch (error) {
+    console.error("Error deleting day:", error);
+    return false;
+  }
+};
+
+// Verileri Sıfırla
 export const resetFirestoreData = async (): Promise<boolean> => {
   try {
-    const batch = writeBatch(db);
-    let operationCount = 0;
-
-    // 1. Delete Plan
-    const planRef = doc(db, CONFIG_COLLECTION, PLAN_DOC_ID);
-    batch.delete(planRef);
-    operationCount++;
-
-    // 2. Delete All Days
-    const daysSnapshot = await getDocs(collection(db, COLLECTION_NAME));
-    daysSnapshot.forEach((docSnapshot) => {
-      batch.delete(docSnapshot.ref);
-      operationCount++;
-    });
-
-    if (operationCount > 0) {
-        await batch.commit();
-    }
+    // 1. Delete All Entry Docs
+    const entriesRef = getUserCollection('entries');
+    const snapshot = await getDocs(entriesRef);
+    const deletePromises = snapshot.docs.map(doc => deleteDoc(doc.ref));
+    await Promise.all(deletePromises);
+    
+    // 2. Delete Plan Doc
+    const planRef = getUserDoc('data', 'plan');
+    await deleteDoc(planRef);
     
     return true;
   } catch (error) {
-    console.error("Error resetting Firestore data:", error);
+    console.error("Error resetting data:", error);
     return false;
   }
 };
