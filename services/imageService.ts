@@ -1,3 +1,4 @@
+import { getSearchConfig, SearchStrategy } from './searchTermsLibrary';
 
 export interface StockImage {
   id: string;
@@ -501,64 +502,180 @@ export const PRESET_CATEGORIES: CategoryGroup[] = [
   }
 ];
 
-// Kategori bazlı arama fonksiyonu - Optimize edilmiş
+// Strateji bazlı kategori araması
 export const searchByCategory = async (
   categoryId: string,
   count: number = 15
 ): Promise<StockImage[]> => {
-  let targetCategory: CategoryItem | null = null;
+  const config = getSearchConfig(categoryId);
   
-  for (const group of PRESET_CATEGORIES) {
-    const found = group.items.find(item => item.id === categoryId);
-    if (found) {
-      targetCategory = found;
-      break;
-    }
-  }
-  
-  if (!targetCategory) {
-    console.error('Category not found:', categoryId);
+  if (!config) {
+    console.error('Category config not found:', categoryId);
     return [];
   }
 
-  console.log('Searching category:', targetCategory.name);
+  console.log('=== CATEGORY SEARCH START ===');
+  console.log('Category:', config.categoryName);
+  console.log('Strategies:', config.strategies.length);
+
   let allResults: StockImage[] = [];
 
-  // 1. Wikimedia kategorisinden ara
-  if (targetCategory.wikimediaCategory) {
-    const wikiCatResults = await searchWikimediaByCategoryName(targetCategory.wikimediaCategory, 10);
-    allResults = [...wikiCatResults];
-    console.log('Wikimedia category results:', wikiCatResults.length);
-  }
+  // Stratejileri öncelik sırasına göre çalıştır
+  const sortedStrategies = [...config.strategies].sort((a, b) => a.priority - b.priority);
 
-  // 2. İngilizce sorgularla Wikimedia (daha iyi sonuç verir)
-  // NOT: Artık tüm sorgular İngilizce olduğu için filtrelemeye gerek yok.
-  for (const query of targetCategory.queries.slice(0, 3)) {
-    if (allResults.length >= count) break;
-    const wikiResults = await searchWikimediaImages(query, 8);
-    const newResults = wikiResults.filter(r => !allResults.some(e => e.url === r.url));
-    allResults = [...allResults, ...newResults];
-  }
-
-  // 3. Google'dan tamamla
-  if (allResults.length < count) {
-    for (const query of targetCategory.queries) {
-      if (allResults.length >= count) break;
-      const googleResults = await searchGoogleImages(query, 5, 'tablo');
-      const newResults = googleResults.filter(r => !allResults.some(e => e.url === r.url));
-      allResults = [...allResults, ...newResults];
-      await new Promise(r => setTimeout(r, 150));
+  for (const strategy of sortedStrategies) {
+    if (allResults.length >= count) {
+      console.log('Enough results, stopping');
+      break;
     }
+
+    console.log(`Strategy ${strategy.priority}: ${strategy.type} - "${strategy.query}"`);
+
+    let results: StockImage[] = [];
+
+    try {
+      switch (strategy.type) {
+        case 'wikimedia_category':
+          results = await searchWikimediaByCategoryName(strategy.query, 10);
+          break;
+
+        case 'wikimedia_search':
+          results = await searchWikimediaWithFilters(
+            strategy.query,
+            8,
+            strategy.fileType || 'any'
+          );
+          break;
+
+        case 'google':
+          results = await searchGoogleImages(strategy.query, 5, 'tablo');
+          break;
+      }
+
+      // Duplikasyonları filtrele
+      const newResults = results.filter(r => 
+        !allResults.some(existing => existing.url === r.url)
+      );
+
+      // Minimum boyut filtresi (eğer belirtilmişse)
+      const filteredResults = config.minWidth 
+        ? newResults // Boyut kontrolü thumbUrl'den yapılamaz, şimdilik atla
+        : newResults;
+
+      console.log(`  Found: ${results.length}, New: ${filteredResults.length}`);
+      allResults = [...allResults, ...filteredResults];
+
+    } catch (error) {
+      console.error(`  Strategy failed:`, error);
+    }
+
+    // Rate limiting
+    await new Promise(r => setTimeout(r, 100));
   }
 
   // SVG ve Wikimedia öncelikli sırala
   const sorted = allResults.sort((a, b) => {
-    const aScore = (a.url.includes('.svg') ? 2 : 0) + (a.source === 'wikimedia' ? 1 : 0);
-    const bScore = (b.url.includes('.svg') ? 2 : 0) + (b.source === 'wikimedia' ? 1 : 0);
+    const aScore = (a.url.includes('.svg') ? 3 : 0) + 
+                   (a.source === 'wikimedia' ? 2 : 0) +
+                   (a.url.includes('.png') ? 1 : 0);
+    const bScore = (b.url.includes('.svg') ? 3 : 0) + 
+                   (b.source === 'wikimedia' ? 2 : 0) +
+                   (b.url.includes('.png') ? 1 : 0);
     return bScore - aScore;
   });
 
+  console.log('=== CATEGORY SEARCH END ===');
+  console.log('Total results:', sorted.length);
+
   return sorted.slice(0, count);
+};
+
+// Wikimedia filtreli arama (fileType destekli)
+const searchWikimediaWithFilters = async (
+  query: string,
+  count: number = 10,
+  fileType: 'svg' | 'png' | 'jpg' | 'any' = 'any'
+): Promise<StockImage[]> => {
+  try {
+    // Dosya tipi filtresi ekle
+    let searchQuery = query;
+    if (fileType === 'svg') {
+      searchQuery = `${query} filetype:drawing`;
+    }
+
+    const searchUrl = `https://commons.wikimedia.org/w/api.php?` +
+      `action=query&list=search` +
+      `&srsearch=${encodeURIComponent(searchQuery)}` +
+      `&srnamespace=6` +
+      `&srlimit=${count * 2}` +
+      `&format=json&origin=*`;
+
+    console.log('  Wikimedia search:', searchQuery);
+
+    const searchResponse = await fetch(searchUrl);
+    const searchData = await searchResponse.json();
+
+    if (!searchData.query?.search?.length) {
+      console.log('  No search results');
+      return [];
+    }
+
+    const titles = searchData.query.search.map((item: any) => item.title).join('|');
+
+    const imageInfoUrl = `https://commons.wikimedia.org/w/api.php?` +
+      `action=query&titles=${encodeURIComponent(titles)}` +
+      `&prop=imageinfo&iiprop=url|size|mime` +
+      `&format=json&origin=*`;
+
+    const imageResponse = await fetch(imageInfoUrl);
+    const imageData = await imageResponse.json();
+
+    const pages = imageData.query?.pages || {};
+    const results: StockImage[] = [];
+
+    Object.values(pages).forEach((page: any, index: number) => {
+      if (page.imageinfo?.[0]?.url) {
+        const url = page.imageinfo[0].url;
+        const mime = page.imageinfo[0].mime || '';
+        const width = page.imageinfo[0].width || 0;
+
+        // Dosya tipi filtresi
+        if (fileType === 'svg' && !mime.includes('svg') && !url.includes('.svg')) {
+          return;
+        }
+        if (fileType === 'png' && !mime.includes('png') && !url.includes('.png')) {
+          return;
+        }
+        if (fileType === 'jpg' && !mime.includes('jpeg') && !url.includes('.jpg')) {
+          return;
+        }
+
+        // Görsel formatları kabul et
+        if (url.match(/\.(jpg|jpeg|png|svg|gif)$/i)) {
+          // Thumbnail URL oluştur
+          let thumbUrl = url;
+          if (url.includes('.svg')) {
+            thumbUrl = url.replace('/commons/', '/commons/thumb/') + '/400px-' + url.split('/').pop() + '.png';
+          } else if (width > 400) {
+            thumbUrl = url.replace('/commons/', '/commons/thumb/') + '/400px-' + url.split('/').pop();
+          }
+
+          results.push({
+            id: `wiki-filter-${index}-${Date.now()}`,
+            url: url,
+            thumbUrl: thumbUrl,
+            title: page.title?.replace('File:', '') || query,
+            source: 'wikimedia'
+          });
+        }
+      }
+    });
+
+    return results.slice(0, count);
+  } catch (error) {
+    console.error('Wikimedia filtered search failed:', error);
+    return [];
+  }
 };
 
 // Wikimedia kategori adına göre arama
