@@ -9,11 +9,11 @@ import { ToastContainer, useToast } from './components/Toast';
 import { ConfirmDialog } from './components/ConfirmDialog';
 import { LoadingScreen } from './components/Skeleton';
 import { generateDayContent, analyzeImage } from './services/geminiService';
-import { searchImages, StockImage } from './services/imageService';
+import { searchImages, StockImage, searchByCategory, PRESET_CATEGORIES } from './services/imageService';
 import { saveDayToFirestore, loadAllDaysFromFirestore, deleteDayFromFirestore, savePlanToFirestore, loadPlanFromFirestore, resetFirestoreData } from './services/firebaseService';
 import { onAuthChange, logOut } from './services/authService';
 import { User } from 'firebase/auth';
-import { Wand2, Download, AlertTriangle, Terminal, FileText, FileType, ChevronDown, CheckCircle2, RotateCcw, Trash2, X, Loader2, LogOut, User as UserIcon } from 'lucide-react';
+import { Wand2, Download, AlertTriangle, Terminal, FileText, FileType, ChevronDown, CheckCircle2, RotateCcw, Trash2, X, Loader2, LogOut, User as UserIcon, Info } from 'lucide-react';
 import { STUDENT_INFO, COMPANY_INFO } from './constants';
 import { Document, Packer, Paragraph, TextRun, HeadingLevel, AlignmentType, ImageRun } from 'docx';
 import { pdf } from '@react-pdf/renderer';
@@ -32,6 +32,8 @@ const App: React.FC = () => {
   const [imagePickerDay, setImagePickerDay] = useState<DayEntry | null>(null);
   const [isSearchingImages, setIsSearchingImages] = useState(false);
   const [selectedImageType, setSelectedImageType] = useState<string>('autocad');
+  const [selectedCategoryGroup, setSelectedCategoryGroup] = useState<string | null>(null);
+  const [categorySearching, setCategorySearching] = useState<string | null>(null);
   const exportMenuRef = useRef<HTMLDivElement>(null);
   
   // Toast Hook
@@ -320,6 +322,7 @@ const App: React.FC = () => {
     setShowImagePicker(true);
     setImageSearchResults([]);
     setIsSearchingImages(false);
+    setSelectedCategoryGroup(null);
   };
 
   const handleSearchWithType = async (imageType: string) => {
@@ -334,6 +337,24 @@ const App: React.FC = () => {
       toastError("Arama Hatası", "Görseller aranırken bir sorun oluştu.");
     } finally {
       setIsSearchingImages(false);
+    }
+  };
+
+  const handleCategorySearch = async (categoryId: string) => {
+    setCategorySearching(categoryId);
+    setIsSearchingImages(true);
+    try {
+      const results = await searchByCategory(categoryId, 15);
+      setImageSearchResults(results);
+      if (results.length === 0) {
+        info('Sonuç Yok', 'Bu kategoride görsel bulunamadı');
+      }
+    } catch (error) {
+      console.error('Category search failed:', error);
+      toastError('Hata', 'Kategori araması başarısız');
+    } finally {
+      setIsSearchingImages(false);
+      setCategorySearching(null);
     }
   };
 
@@ -884,7 +905,7 @@ const App: React.FC = () => {
                 <p className="text-sm text-zinc-500">Gün {imagePickerDay?.dayNumber}: {imagePickerDay?.specificTopic}</p>
               </div>
               <button 
-                onClick={() => { setShowImagePicker(false); setImagePickerDay(null); setImageSearchResults([]); }}
+                onClick={() => { setShowImagePicker(false); setImagePickerDay(null); setImageSearchResults([]); setSelectedCategoryGroup(null); }}
                 className="p-2 text-zinc-400 hover:text-white hover:bg-zinc-800 rounded-lg transition-colors"
               >
                 <X className="w-5 h-5" />
@@ -920,6 +941,68 @@ const App: React.FC = () => {
                       <p className="font-bold text-zinc-200">Eğitim / Şema</p>
                       <p className="text-[10px] text-zinc-500 mt-1">Diyagram, tablo, pano şeması</p>
                     </button>
+                  </div>
+
+                  {/* HAZIR KATEGORİLER */}
+                  <div className="mt-8 pt-6 border-t border-zinc-800">
+                      <h4 className="text-sm font-bold text-zinc-400 mb-3 flex items-center gap-2">
+                        📚 Hazır Kategoriler
+                      </h4>
+                      
+                      {/* Kategori Grupları */}
+                      <div className="flex flex-wrap gap-2 mb-4">
+                        {PRESET_CATEGORIES.map(group => (
+                          <button
+                            key={group.id}
+                            onClick={() => setSelectedCategoryGroup(selectedCategoryGroup === group.id ? null : group.id)}
+                            className={`
+                              px-3 py-2 rounded-lg text-xs font-medium transition-all flex items-center gap-2 border
+                              ${selectedCategoryGroup === group.id 
+                                ? 'bg-blue-500/10 border-blue-500/50 text-blue-400' 
+                                : 'bg-zinc-800 border-zinc-700 text-zinc-400 hover:bg-zinc-700 hover:text-zinc-200'}
+                            `}
+                          >
+                            <span>{group.icon}</span>
+                            <span>{group.name}</span>
+                          </button>
+                        ))}
+                      </div>
+
+                      {/* Seçili Grubun Alt Kategorileri */}
+                      {selectedCategoryGroup && (
+                        <div className="bg-zinc-950/50 rounded-xl p-4 border border-zinc-800 animate-fade-in">
+                          <div className="flex flex-wrap gap-2">
+                            {PRESET_CATEGORIES
+                              .find(g => g.id === selectedCategoryGroup)
+                              ?.items.map(item => (
+                                <button
+                                  key={item.id}
+                                  onClick={() => handleCategorySearch(item.id)}
+                                  disabled={categorySearching !== null}
+                                  title={item.description}
+                                  className={`
+                                    px-3 py-1.5 rounded-md text-xs border transition-all
+                                    ${categorySearching === item.id 
+                                      ? 'bg-blue-600 border-blue-600 text-white' 
+                                      : 'bg-zinc-800 border-zinc-700 text-zinc-400 hover:text-white hover:border-zinc-500'}
+                                    ${categorySearching !== null && categorySearching !== item.id ? 'opacity-50 cursor-not-allowed' : ''}
+                                  `}
+                                >
+                                  {categorySearching === item.id ? (
+                                    <span className="flex items-center gap-1">
+                                      <Loader2 className="w-3 h-3 animate-spin" /> Aranıyor...
+                                    </span>
+                                  ) : item.name}
+                                </button>
+                              ))}
+                          </div>
+                          
+                          {/* Kategori açıklaması */}
+                          <p className="mt-3 text-[10px] text-zinc-600 flex items-center gap-1.5 italic">
+                            <Info className="w-3 h-3" /> Wikimedia Commons ve Google'dan teknik görseller aranır
+                          </p>
+                        </div>
+                      )}
                   </div>
                 </div>
               )}
