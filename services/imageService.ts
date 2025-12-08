@@ -51,7 +51,7 @@ const cleanQuery = (query: string): string => {
 const searchWikimediaImages = async (query: string, count: number = 5): Promise<StockImage[]> => {
   try {
     const searchUrl = `https://commons.wikimedia.org/w/api.php?` +
-      `action=query&list=search&srsearch=${encodeURIComponent(query + ' elektrik OR circuit OR diagram')}&srnamespace=6&srlimit=${count}&format=json&origin=*`;
+      `action=query&list=search&srsearch=${encodeURIComponent(query)}&srnamespace=6&srlimit=${count * 2}&format=json&origin=*`;
     
     const searchResponse = await fetch(searchUrl);
     const searchData = await searchResponse.json();
@@ -337,7 +337,7 @@ export const PRESET_CATEGORIES: CategoryGroup[] = [
         name: 'Elektrik Tesisat Sembolleri',
         description: 'Anahtar, priz, aydınlatma sembolleri',
         queries: ['electrical symbols IEC 60617', 'wiring diagram symbols standard', 'electrical schematic symbols chart'],
-        wikimediaCategory: 'IEC_60617_electrical_symbols',
+        wikimediaCategory: 'IEC_60617',
         suggestedTopic: 'Elektrik tesisat sembolleri eğitimi',
         suggestedPrompt: 'Bugün elektrik tesisat projelerinde kullanılan semboller öğrenildi. Anahtar, priz, aydınlatma armatürleri ve dağıtım kutusu sembolleri incelendi. Proje okuma ve çizim teknikleri üzerinde çalışıldı.'
       },
@@ -346,7 +346,7 @@ export const PRESET_CATEGORIES: CategoryGroup[] = [
         name: 'Tek Hat Şeması Sembolleri',
         description: 'Trafo, şalter, bara sembolleri',
         queries: ['single line diagram symbols', 'one line diagram symbols power', 'transformer circuit breaker symbol'],
-        wikimediaCategory: 'Electrical_one-line_diagrams',
+        wikimediaCategory: 'One-line_diagrams',
         suggestedTopic: 'Tek hat şeması sembolleri ve okuma teknikleri',
         suggestedPrompt: 'Bugün tek hat şemalarında kullanılan semboller öğrenildi. Trafo, kesici, ayırıcı, bara ve ölçü trafosu sembolleri incelendi. Gerçek projeler üzerinde şema okuma çalışması yapıldı.'
       },
@@ -380,7 +380,7 @@ export const PRESET_CATEGORIES: CategoryGroup[] = [
         name: 'Tek Hat Şeması Örnekleri',
         description: 'Bina ve tesis tek hat şemaları',
         queries: ['single line diagram electrical', 'one line diagram example power', 'electrical SLD drawing'],
-        wikimediaCategory: 'Electrical_one-line_diagrams',
+        wikimediaCategory: 'One-line_diagrams',
         suggestedTopic: 'Tek hat şeması inceleme ve analiz çalışması',
         suggestedPrompt: 'Bugün gerçek projelerin tek hat şemaları incelendi. Ana dağıtım panosu, tali panolar ve yük dağılımı analiz edildi. Şema üzerinden güç hesaplamaları ve koruma koordinasyonu değerlendirildi.'
       },
@@ -389,7 +389,7 @@ export const PRESET_CATEGORIES: CategoryGroup[] = [
         name: 'Pano İç Bağlantı Şeması',
         description: 'Pano montaj ve bağlantı şemaları',
         queries: ['electrical panel wiring diagram', 'distribution board schematic', 'switchboard internal wiring'],
-        wikimediaCategory: 'Electrical_wiring_diagrams',
+        wikimediaCategory: 'Wiring_diagrams',
         suggestedTopic: 'Pano iç bağlantı şemaları inceleme',
         suggestedPrompt: 'Bugün pano iç bağlantı şemaları üzerinde çalışıldı. Bara bağlantıları, klemens numaralandırma ve kablo yolları incelendi. Şemadan montaj yapma ve hata bulma teknikleri öğrenildi.'
       },
@@ -398,7 +398,7 @@ export const PRESET_CATEGORIES: CategoryGroup[] = [
         name: 'Topraklama Şeması',
         description: 'Topraklama sistem şemaları',
         queries: ['grounding system diagram TN TT IT', 'earthing diagram electrical', 'ground electrode system diagram'],
-        wikimediaCategory: 'Earthing_systems',
+        wikimediaCategory: 'Earthing_system',
         suggestedTopic: 'Topraklama sistemleri ve şemaları eğitimi',
         suggestedPrompt: 'Bugün topraklama sistem şemaları incelendi. TN, TT ve IT sistemlerinin farkları, topraklama direnci hesaplamaları ve elektrot yerleşimi öğrenildi. Yönetmelik gereksinimleri değerlendirildi.'
       },
@@ -416,7 +416,7 @@ export const PRESET_CATEGORIES: CategoryGroup[] = [
         name: 'Motor Kumanda Devresi',
         description: 'Yıldız üçgen, direkt yol verme',
         queries: ['star delta starter diagram', 'motor control circuit schematic', 'DOL direct online starter wiring'],
-        wikimediaCategory: 'Motor_controllers',
+        wikimediaCategory: 'Motor_control_circuits',
         suggestedTopic: 'Motor kumanda devreleri eğitimi',
         suggestedPrompt: 'Bugün motor kumanda devreleri üzerinde çalışıldı. Direkt yol verme, yıldız üçgen ve soft starter devreleri incelendi. Kumanda ve güç devresi şemaları okundu, bağlantı mantığı öğrenildi.'
       }
@@ -475,7 +475,7 @@ export const PRESET_CATEGORIES: CategoryGroup[] = [
         name: 'Elektrik Uyarı İşaretleri',
         description: 'Tehlike ve uyarı levhaları',
         queries: ['electrical warning signs ISO 7010', 'high voltage warning symbol', 'danger electricity sign yellow'],
-        wikimediaCategory: 'Electrical_safety_symbols',
+        wikimediaCategory: 'Electrical_safety',
         suggestedTopic: 'Elektrik güvenlik işaretleri eğitimi',
         suggestedPrompt: 'Bugün elektrik tesislerinde kullanılan güvenlik işaretleri öğrenildi. Tehlike, uyarı ve bilgilendirme levhaları incelendi. İşaretlerin yerleşim kuralları ve standartları değerlendirildi.'
       },
