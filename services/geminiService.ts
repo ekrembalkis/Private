@@ -5,9 +5,9 @@ import { DayEntry } from '../types';
 
 // Initialize the API client
 const getAiClient = () => {
-  const apiKey = process.env.GEMINI_API_KEY;
+  const apiKey = process.env.API_KEY;
   if (!apiKey) {
-    console.error("API Key is missing. Please set GEMINI_API_KEY");
+    console.error("API Key is missing. Please set API_KEY");
     throw new Error("Gemini API Key is missing");
   }
   return new GoogleGenAI({ apiKey });

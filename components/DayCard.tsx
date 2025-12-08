@@ -36,12 +36,21 @@ export const DayCard: React.FC<DayCardProps> = ({
   const [editType, setEditType] = useState<InternshipType>(day.type);
   const [editTopic, setEditTopic] = useState<string>(day.specificTopic);
   const [editCustomPrompt, setEditCustomPrompt] = useState<string>(day.customPrompt || '');
+  const [isCustomTopic, setIsCustomTopic] = useState(false);
 
   // Sync state with props when day changes
   useEffect(() => {
     setEditType(day.type);
     setEditTopic(day.specificTopic);
     setEditCustomPrompt(day.customPrompt || '');
+
+    // Check if current topic is in the standard lists
+    const list = day.type === InternshipType.PRODUCTION_DESIGN ? PRODUCTION_TOPICS : MANAGEMENT_TOPICS;
+    // Note: If topic is not in the list (e.g. changed via custom before), set custom mode to true
+    // However, if we change type in parent, day.specificTopic might change.
+    // We check against BOTH lists to be safe, or just the relevant one.
+    // Ideally if it's not in the relevant list, it's custom.
+    setIsCustomTopic(!list.includes(day.specificTopic));
   }, [day.type, day.specificTopic, day.customPrompt]);
 
   const isProduction = day.type === InternshipType.PRODUCTION_DESIGN;
@@ -81,6 +90,11 @@ export const DayCard: React.FC<DayCardProps> = ({
   const handleEditClick = () => {
     setEditType(day.type);
     setEditTopic(day.specificTopic);
+    setEditCustomPrompt(day.customPrompt || '');
+    
+    const list = day.type === InternshipType.PRODUCTION_DESIGN ? PRODUCTION_TOPICS : MANAGEMENT_TOPICS;
+    setIsCustomTopic(!list.includes(day.specificTopic));
+    
     setIsEditing(true);
   };
 
@@ -91,11 +105,32 @@ export const DayCard: React.FC<DayCardProps> = ({
 
   const handleTypeChange = (type: InternshipType) => {
     setEditType(type);
-    if (type === InternshipType.PRODUCTION_DESIGN) {
-        setEditTopic(PRODUCTION_TOPICS[0]);
-    } else {
-        setEditTopic(MANAGEMENT_TOPICS[0]);
+    // If we are NOT in custom mode, update the topic to the first item of the new list
+    if (!isCustomTopic) {
+        if (type === InternshipType.PRODUCTION_DESIGN) {
+            setEditTopic(PRODUCTION_TOPICS[0]);
+        } else {
+            setEditTopic(MANAGEMENT_TOPICS[0]);
+        }
     }
+    // If we are in custom mode, we keep the text as is.
+  };
+
+  const toggleCustomTopic = () => {
+      const newCustomState = !isCustomTopic;
+      setIsCustomTopic(newCustomState);
+      
+      if (!newCustomState) {
+          // Switching back to list: reset topic to first item of current type list
+          if (editType === InternshipType.PRODUCTION_DESIGN) {
+              setEditTopic(PRODUCTION_TOPICS[0]);
+          } else {
+              setEditTopic(MANAGEMENT_TOPICS[0]);
+          }
+      } else {
+          // Switching to custom: clear the text to let user type fresh
+          setEditTopic("");
+      }
   };
 
   return (
@@ -455,19 +490,39 @@ export const DayCard: React.FC<DayCardProps> = ({
                         </div>
 
                         <div className="space-y-2">
-                             <label className="text-xs font-bold text-zinc-500 uppercase tracking-wide">Günlük Konu / Görev</label>
-                             <div className="relative">
-                                <select 
+                             <div className="flex items-center justify-between">
+                                <label className="text-xs font-bold text-zinc-500 uppercase tracking-wide">Günlük Konu / Görev</label>
+                                <button 
+                                    onClick={toggleCustomTopic}
+                                    className="text-[10px] text-blue-400 hover:text-blue-300 transition-colors font-medium hover:underline"
+                                >
+                                    {isCustomTopic ? 'Listeden Seç' : '+ Kendi Konumu Yaz'}
+                                </button>
+                             </div>
+                             
+                             {isCustomTopic ? (
+                                <input 
+                                    type="text"
                                     value={editTopic}
                                     onChange={(e) => setEditTopic(e.target.value)}
-                                    className="w-full bg-zinc-950 border border-zinc-800 rounded-lg py-3 px-4 text-sm text-zinc-300 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 appearance-none"
-                                >
-                                    {(editType === InternshipType.PRODUCTION_DESIGN ? PRODUCTION_TOPICS : MANAGEMENT_TOPICS).map((t, i) => (
-                                        <option key={i} value={t}>{t}</option>
-                                    ))}
-                                </select>
-                                <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500 pointer-events-none" />
-                             </div>
+                                    placeholder="Bugünün ana konusu ne olsun?"
+                                    autoFocus
+                                    className="w-full bg-zinc-950 border border-zinc-800 rounded-lg py-3 px-4 text-sm text-zinc-300 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 placeholder-zinc-600"
+                                />
+                             ) : (
+                                <div className="relative">
+                                    <select 
+                                        value={editTopic}
+                                        onChange={(e) => setEditTopic(e.target.value)}
+                                        className="w-full bg-zinc-950 border border-zinc-800 rounded-lg py-3 px-4 text-sm text-zinc-300 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 appearance-none"
+                                    >
+                                        {(editType === InternshipType.PRODUCTION_DESIGN ? PRODUCTION_TOPICS : MANAGEMENT_TOPICS).map((t, i) => (
+                                            <option key={i} value={t}>{t}</option>
+                                        ))}
+                                    </select>
+                                    <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500 pointer-events-none" />
+                                </div>
+                             )}
                         </div>
 
                         <div className="space-y-2">
