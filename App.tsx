@@ -4,6 +4,7 @@ import { DayEntry, InternshipType } from './types';
 import { Stats } from './components/Stats';
 import { DayCard } from './components/DayCard';
 import { LoginScreen } from './components/LoginScreen';
+import { BatchProgress } from './components/BatchProgress';
 import { generateDayContent, analyzeImage } from './services/geminiService';
 import { searchImages, StockImage } from './services/imageService';
 import { saveDayToFirestore, loadAllDaysFromFirestore, deleteDayFromFirestore, savePlanToFirestore, loadPlanFromFirestore, resetFirestoreData } from './services/firebaseService';
@@ -29,6 +30,16 @@ const App: React.FC = () => {
   const [isSearchingImages, setIsSearchingImages] = useState(false);
   const [selectedImageType, setSelectedImageType] = useState<string>('autocad');
   const exportMenuRef = useRef<HTMLDivElement>(null);
+
+  // Batch processing states
+  const [batchRunning, setBatchRunning] = useState(false);
+  const [batchPaused, setBatchPaused] = useState(false);
+  const [batchCompleted, setBatchCompleted] = useState(0);
+  const [batchTotal, setBatchTotal] = useState(0);
+  const [batchCurrentDay, setBatchCurrentDay] = useState<number | null>(null);
+  const [batchEta, setBatchEta] = useState(0);
+  const batchCancelRef = useRef(false);
+  const batchPauseRef = useRef(false);
 
   // Auth Listener
   useEffect(() => {
@@ -119,6 +130,119 @@ const App: React.FC = () => {
     } catch (error) {
       console.error('Logout error:', error);
     }
+  };
+
+  const handleBatchGenerate = async () => {
+    // Görseli olmayan ve üretilmemiş günleri bul
+    const pendingDays = days.filter(d => !d.isGenerated && !d.hasVisual);
+    
+    if (pendingDays.length === 0) {
+      alert("Üretilecek gün bulunamadı. Tüm günler zaten oluşturulmuş veya görsel gerektiriyor.");
+      return;
+    }
+
+    // Görsel gerektiren günleri uyar
+    const visualDays = days.filter(d => !d.isGenerated && d.hasVisual);
+    if (visualDays.length > 0) {
+      const proceed = window.confirm(
+        `${pendingDays.length} gün otomatik üretilecek.\n\n` +
+        `Not: ${visualDays.length} gün görsel gerektirdiği için manuel işlenecek.\n\n` +
+        `Devam edilsin mi?`
+      );
+      if (!proceed) return;
+    }
+
+    // Batch başlat
+    setBatchRunning(true);
+    setBatchPaused(false);
+    setBatchCompleted(0);
+    setBatchTotal(pendingDays.length);
+    setBatchCurrentDay(null);
+    setBatchEta(pendingDays.length * 8); // Ortalama 8 saniye/gün
+    batchCancelRef.current = false;
+    batchPauseRef.current = false;
+
+    const startTime = Date.now();
+    let successCount = 0;
+
+    for (let i = 0; i < pendingDays.length; i++) {
+      // İptal kontrolü
+      if (batchCancelRef.current) {
+        console.log('Batch cancelled');
+        break;
+      }
+
+      // Pause kontrolü
+      while (batchPauseRef.current) {
+        await new Promise(r => setTimeout(r, 500));
+        if (batchCancelRef.current) break;
+      }
+
+      const day = pendingDays[i];
+      setBatchCurrentDay(day.dayNumber);
+
+      try {
+        const { text, visualDesc, workTitle } = await generateDayContent(day, days);
+
+        if (text) {
+          const updatedDay: DayEntry = {
+            ...day,
+            content: text,
+            visualDescription: visualDesc,
+            workTitle: workTitle,
+            isGenerated: true,
+            isSaved: true
+          };
+
+          setDays(prev => prev.map(d => 
+            d.dayNumber === day.dayNumber ? updatedDay : d
+          ));
+
+          await saveDayToFirestore(updatedDay);
+          successCount++;
+          setBatchCompleted(successCount);
+
+          // ETA güncelle
+          const elapsed = (Date.now() - startTime) / 1000;
+          const avgPerDay = elapsed / successCount;
+          const remaining = pendingDays.length - successCount;
+          setBatchEta(Math.round(avgPerDay * remaining));
+        }
+      } catch (error) {
+        console.error(`Day ${day.dayNumber} failed:`, error);
+      }
+
+      // Rate limiting: 2 saniye bekle (Gemini API limiti için)
+      if (i < pendingDays.length - 1 && !batchCancelRef.current) {
+        await new Promise(r => setTimeout(r, 2000));
+      }
+    }
+
+    setBatchRunning(false);
+    setBatchCurrentDay(null);
+    
+    // 5 saniye sonra progress'i gizle
+    setTimeout(() => {
+      setBatchCompleted(0);
+      setBatchTotal(0);
+    }, 5000);
+  };
+
+  const handleBatchPause = () => {
+    batchPauseRef.current = true;
+    setBatchPaused(true);
+  };
+
+  const handleBatchResume = () => {
+    batchPauseRef.current = false;
+    setBatchPaused(false);
+  };
+
+  const handleBatchCancel = () => {
+    batchCancelRef.current = true;
+    batchPauseRef.current = false;
+    setBatchRunning(false);
+    setBatchPaused(false);
   };
 
   const handleRegenerate = async (day: DayEntry) => {
@@ -568,6 +692,15 @@ const App: React.FC = () => {
                 <div className="bg-zinc-900 p-6 rounded-2xl border border-zinc-800 shadow-lg space-y-4 sticky top-[30rem]">
                     <h3 className="text-xs font-bold text-zinc-500 uppercase tracking-widest mb-4">İşlemler</h3>
                     
+                    <button 
+                        onClick={handleBatchGenerate}
+                        disabled={batchRunning}
+                        className="w-full py-3 px-4 bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 text-white rounded-xl font-medium transition-all flex items-center justify-center gap-2 shadow-lg shadow-blue-900/20 mb-4 disabled:opacity-50 disabled:cursor-not-allowed group"
+                    >
+                        <Wand2 className="w-5 h-5 group-hover:scale-110 transition-transform" />
+                        Otomatik Üret
+                    </button>
+
                     <div className="relative" ref={exportMenuRef}>
                         <button 
                             onClick={() => setShowExportMenu(!showExportMenu)}
@@ -786,6 +919,18 @@ const App: React.FC = () => {
            </div>
         </div>
       )}
+      
+      <BatchProgress
+        isRunning={batchRunning}
+        isPaused={batchPaused}
+        completed={batchCompleted}
+        total={batchTotal}
+        currentDay={batchCurrentDay}
+        eta={batchEta}
+        onPause={handleBatchPause}
+        onResume={handleBatchResume}
+        onCancel={handleBatchCancel}
+      />
     </div>
   );
 };
