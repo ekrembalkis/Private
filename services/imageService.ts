@@ -442,22 +442,23 @@ export const searchImages = async (
   imageType: string = 'autocad'
 ): Promise<StockImage[]> => {
   console.log('=== IMAGE SEARCH START ===');
-  console.log('Original Topic (TR):', topic);
-  
-  // Önce topic'i İngilizceye çevir - tüm stratejilerde kullanılacak
-  const englishTopic = translateToEnglish(topic);
-  console.log('Translated Topic (EN):', englishTopic);
+  console.log('Topic:', topic);
   console.log('Type:', imageType);
   console.log('Count:', count);
 
+  // Topic İngilizceye çevrilecek (buildTechnicalQuery içinde)
+  // Wikimedia ve Google için burada çeviriyoruz
+  const englishTopic = translateToEnglish(topic);
+  console.log('English Topic (for fallbacks):', englishTopic);
+
   let allResults: StockImage[] = [];
 
-  // 1. SerpAPI ile ara (YENİ - PRİMER)
+  // 1. SerpAPI ile ara (PRİMER) - buildTechnicalQuery içinde çeviri yapılıyor
   const serpApiKey = getSerpApiKey();
   if (serpApiKey) {
     console.log('Strategy 1: SerpAPI');
     const serpResults = await searchImagesWithSerpAPI(
-      englishTopic,  // İngilizce topic
+      topic,  // Orijinal topic - buildTechnicalQuery çevirecek
       count,
       imageType as 'autocad' | 'saha' | 'tablo' | 'genel'
     );

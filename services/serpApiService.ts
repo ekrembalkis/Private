@@ -214,7 +214,7 @@ export const translateToEnglish = (topic: string): string => {
 
 /**
  * Teknik görsel araması için optimize edilmiş query builder
- * All queries are in English for better results
+ * Kısa ve etkili query'ler üretir (uzun query'ler 500 hatası verir)
  */
 export const buildTechnicalQuery = (
     topic: string,
@@ -222,16 +222,19 @@ export const buildTechnicalQuery = (
 ): string => {
     // Translate topic to English
     const englishTopic = translateToEnglish(topic);
+    
+    // Sadece ilk 5 kelimeyi al (query çok uzun olmasın)
+    const shortTopic = englishTopic.split(' ').slice(0, 5).join(' ');
 
     switch (queryType) {
         case 'autocad':
-            return `${englishTopic} AutoCAD electrical drawing blueprint schematic`;
+            return `${shortTopic} AutoCAD drawing`;
         case 'saha':
-            return `${englishTopic} electrical installation work site electrician`;
+            return `${shortTopic} electrical installation`;
         case 'tablo':
-            return `${englishTopic} electrical diagram chart schematic symbol`;
+            return `${shortTopic} diagram schematic`;
         default:
-            return `${englishTopic} electrical`;
+            return `${shortTopic} electrical`;
     }
 };
 
