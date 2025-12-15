@@ -91,125 +91,64 @@ export const searchImagesSerpAPI = async (
 };
 
 /**
- * Turkish to English keyword mapping
- * Simple stems/roots for better matching
+ * Turkish to English topic mapping for better search results
  */
-const KEYWORD_MAP: Record<string, string> = {
-    // Electrical terms
+const TOPIC_TRANSLATIONS: Record<string, string> = {
+    // Common terms
     'elektrik': 'electrical',
-    'pano': 'electrical panel',
+    'pano': 'electrical panel switchboard',
     'kablo': 'cable wiring',
-    'montaj': 'installation',
+    'montaj': 'installation mounting',
     'devre': 'circuit',
     'şema': 'schematic diagram',
-    'proje': 'project',
-    'aydınlat': 'lighting',
-    'topraklama': 'grounding',
-    'sigorta': 'circuit breaker',
+    'proje': 'project drawing',
+    'aydınlatma': 'lighting',
+    'topraklama': 'grounding earthing',
+    'sigorta': 'fuse circuit breaker',
     'trafo': 'transformer',
-    'motor': 'motor',
-    'kompanzasyon': 'power factor',
-    'ölçüm': 'measurement',
-    'bakım': 'maintenance',
-    'arıza': 'fault',
-    'tesisat': 'wiring',
+    'motor': 'motor drive',
+    'kompanzasyon': 'power factor correction capacitor',
+    'ölçüm': 'measurement testing',
+    'bakım': 'maintenance repair',
+    'arıza': 'fault troubleshooting',
+    'tesisat': 'installation wiring',
     'dağıtım': 'distribution',
     'kumanda': 'control',
-    'otomasyon': 'automation',
-    'inverter': 'inverter',
+    'otomasyon': 'automation PLC',
+    'inverter': 'inverter VFD',
     'kondansatör': 'capacitor',
     'kontaktör': 'contactor',
     'röle': 'relay',
-    'şalter': 'switch',
+    'şalter': 'switch breaker',
     'bara': 'busbar',
-    'klemens': 'terminal',
+    'klemens': 'terminal block',
     'pabuç': 'cable lug',
     'multimetre': 'multimeter',
     'pens': 'clamp meter',
-    'güç': 'power',
-    'gerilim': 'voltage',
-    'akım': 'current',
-    
-    // Buildings
     'villa': 'residential house',
     'fabrika': 'factory industrial',
-    'ofis': 'office',
+    'ofis': 'office commercial',
     'şantiye': 'construction site',
-    'bina': 'building',
-    'konut': 'residential',
-    'apartman': 'apartment',
-    'daire': 'apartment',
-    'kat': 'floor storey',
-    
-    // Design terms
-    'autocad': 'AutoCAD electrical',
-    'çizim': 'drawing',
-    'plan': 'floor plan',
-    'kesit': 'section',
-    'detay': 'detail',
-    'tasarım': 'design',
-    'hesap': 'calculation',
-    
-    // Numbers
-    'iki': 'two',
-    'üç': 'three',
-    'dört': 'four',
-    'beş': 'five',
-    'tek': 'single',
-    'çok': 'multi'
+    'AutoCAD': 'AutoCAD CAD',
+    'tek hat': 'single line diagram',
+    'güç': 'power',
+    'gerilim': 'voltage',
+    'akım': 'current amperage'
 };
-
-// Turkish words to skip (fillers, connectors)
-const SKIP_WORDS = new Set(['de', 'da', 've', 'ile', 'için', 'bir', 'bu', 'şu', 'o', 'gibi', 'kadar', 'olan', 'olarak', 'üzerinde', 'hakkında', 'katlı']);
 
 /**
  * Translate Turkish topic to English for better search
- * Uses keyword matching with stem detection
  */
-export const translateToEnglish = (topic: string): string => {
-    // Clean the input
-    let cleaned = topic
-        .toLowerCase()
-        .replace(/['']/g, ' ')  // Remove apostrophes
-        .replace(/[^\w\sğüşıöçĞÜŞİÖÇa-z0-9]/g, ' ')  // Keep only letters and spaces
-        .replace(/\s+/g, ' ')
-        .trim();
+const translateToEnglish = (topic: string): string => {
+    let result = topic.toLowerCase();
     
-    const words = cleaned.split(' ');
-    const translatedWords: string[] = [];
-    
-    for (const word of words) {
-        if (word.length < 2) continue;
-        if (SKIP_WORDS.has(word)) continue;
-        
-        // Try to find a matching keyword
-        let found = false;
-        
-        // First try exact match
-        if (KEYWORD_MAP[word]) {
-            translatedWords.push(KEYWORD_MAP[word]);
-            found = true;
-        } else {
-            // Try stem matching (check if word starts with any key)
-            for (const [key, value] of Object.entries(KEYWORD_MAP)) {
-                if (word.startsWith(key) || key.startsWith(word)) {
-                    translatedWords.push(value);
-                    found = true;
-                    break;
-                }
-            }
-        }
-        
-        // If no translation found and word looks English, keep it
-        if (!found && /^[a-z]+$/.test(word) && word.length > 2) {
-            translatedWords.push(word);
-        }
+    // Replace known Turkish terms with English
+    for (const [tr, en] of Object.entries(TOPIC_TRANSLATIONS)) {
+        const regex = new RegExp(tr.toLowerCase(), 'gi');
+        result = result.replace(regex, en);
     }
     
-    // Remove duplicates while preserving order
-    const unique = [...new Set(translatedWords)];
-    
-    return unique.join(' ');
+    return result;
 };
 
 /**
