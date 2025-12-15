@@ -1,176 +1,213 @@
-import type { VercelRequest, VercelResponse } from '@vercel/node';
-
 /**
- * SerpAPI Proxy for Staj Defteri Oluşturucu
- * Vercel Serverless Function - CORS sorunlarını çözer
- * Emity v2'den adapte edilmiştir
+ * SerpAPI Image Search Service
+ * Emity v2'den adapte edilmiş - Staj Defteri için özelleştirilmiş
+ * Vercel Proxy üzerinden CORS sorunları çözülmüş
+ * Query'ler İngilizce - Daha iyi sonuçlar için
  */
 
-// İzin verilen SerpAPI motorları
-const ALLOWED_ENGINES = [
-    'google_images',
-    'google_trends'
-];
+export interface SerpAPIImage {
+    id: string;
+    url: string;
+    thumbnail: string;
+    title: string;
+    source: string;
+    width: number;
+    height: number;
+}
 
-// Engellenen domainler - stok foto siteleri ve sosyal medya
-const BLOCKED_DOMAINS = [
-    // Stok foto siteleri
-    'shutterstock.com',
-    'istockphoto.com',
-    'gettyimages.com',
-    'dreamstime.com',
-    'freepik.com',
-    'adobestock.com',
-    'depositphotos.com',
-    '123rf.com',
-    'alamy.com',
-    'bigstockphoto.com',
-    // Sosyal medya
-    'pinterest.com',
-    'instagram.com',
-    'facebook.com',
-    'fbsbx.com',
-    'fbcdn.net',
-    'lookaside.fbsbx.com',
-    'tiktok.com',
-    'twitter.com',
-    'twimg.com',
-    // E-ticaret
-    'aliexpress.com',
-    'alibaba.com',
-    'amazon.com',
-    // Diğer
-    'wikia.nocookie.net',
-    'fandom.com'
-];
+export interface SerpAPIOptions {
+    count?: number;
+    imageType?: 'photo' | 'lineart' | 'clipart' | 'animated';
+    safeSearch?: boolean;
+}
 
-// Tercih edilen domainler - teknik/eğitim kaynakları
-const PREFERRED_DOMAINS = [
-    'wikipedia.org',
-    'wikimedia.org',
-    '.edu',
-    '.gov',
-    'elektrikport.com',
-    'elektrikrehberiniz.com',
-    'electronics-tutorials.ws',
-    'allaboutcircuits.com',
-    'electrical4u.com',
-    'circuitdigest.com'
-];
+/**
+ * SerpAPI üzerinden görsel arama
+ * Vercel proxy kullanarak CORS sorunlarını çözer
+ */
+export const searchImagesSerpAPI = async (
+    query: string,
+    apiKey: string,
+    options: SerpAPIOptions = {}
+): Promise<SerpAPIImage[]> => {
+    const { count = 15, imageType, safeSearch = true } = options;
 
-export default async function handler(req: VercelRequest, res: VercelResponse) {
-    // CORS Headers
-    res.setHeader('Access-Control-Allow-Origin', '*');
-    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
-
-    if (req.method === 'OPTIONS') {
-        return res.status(200).end();
+    if (!apiKey || !query || query.trim().length < 2) {
+        console.log('[SerpAPI] ❌ Missing API key or invalid query');
+        return [];
     }
 
+    const cleanQuery = query.trim();
+    console.log('[SerpAPI] 🔍 Searching:', cleanQuery);
+
     try {
-        const { api_key, engine, ...otherParams } = req.query;
-
-        // API key kontrolü
-        if (!api_key) {
-            return res.status(400).json({ error: 'Missing api_key parameter' });
-        }
-
-        // Engine kontrolü
-        if (!engine) {
-            return res.status(400).json({ error: 'Missing engine parameter' });
-        }
-
-        // Engine validasyonu
-        if (!ALLOWED_ENGINES.includes(String(engine))) {
-            return res.status(400).json({
-                error: `Invalid engine. Allowed: ${ALLOWED_ENGINES.join(', ')}`
-            });
-        }
-
-        // SerpAPI URL oluştur
-        const params = new URLSearchParams();
-        params.append('api_key', String(api_key));
-        params.append('engine', String(engine));
-
-        // Diğer parametreleri ekle
-        Object.entries(otherParams).forEach(([key, value]) => {
-            if (value !== undefined && value !== null) {
-                if (Array.isArray(value)) {
-                    params.append(key, value[0]);
-                } else {
-                    params.append(key, String(value));
-                }
-            }
+        // Vercel API proxy kullan
+        const params = new URLSearchParams({
+            q: cleanQuery,
+            api_key: apiKey,
+            engine: 'google_images',
+            num: String(Math.min(count, 100)), // SerpAPI max 100
+            safe: safeSearch ? 'active' : 'off',
+            hl: 'en', // English results for better quality
+            gl: 'us'  // US location for more results
         });
 
-        console.log('[SerpAPI Proxy] Request:', {
-            engine,
-            query: otherParams.q || otherParams.search_query,
-            count: otherParams.num || otherParams.count
-        });
+        // Görsel tipi filtresi
+        if (imageType) {
+            params.append('tbs', `itp:${imageType}`);
+        }
 
-        // SerpAPI'ye istek at
-        const response = await fetch(`https://serpapi.com/search.json?${params}`);
+        const response = await fetch('/api/serpapi?' + params.toString());
 
         if (!response.ok) {
-            const errorText = await response.text();
-            console.error('[SerpAPI Proxy] Error:', response.status, errorText.substring(0, 200));
-            return res.status(response.status).json({
-                error: `SerpAPI error: ${response.status}`,
-                details: errorText.substring(0, 200)
-            });
+            const errorData = await response.json().catch(() => ({}));
+            console.error('[SerpAPI] ❌ Proxy error:', response.status, errorData);
+            return [];
         }
 
         const data = await response.json();
 
-        // SerpAPI hata kontrolü
-        if (data.error) {
-            console.error('[SerpAPI Proxy] API Error:', data.error);
-            return res.status(400).json({ error: data.error });
+        if (!data.images_results || data.images_results.length === 0) {
+            console.log('[SerpAPI] ⚠️ No results found');
+            return [];
         }
 
-        console.log('[SerpAPI Proxy] Success:', {
-            engine,
-            resultCount: data.images_results?.length || 0
-        });
+        console.log('[SerpAPI] ✓ Found', data.images_results.length, 'images');
 
-        // Google Images için özel filtreleme
-        if (engine === 'google_images' && data.images_results) {
-            const filteredResults = data.images_results.filter((img: any) => {
-                const url = img.original || '';
-                // Engellenen domainleri filtrele
-                const isBlocked = BLOCKED_DOMAINS.some(domain => url.includes(domain));
-                if (isBlocked) return false;
+        return data.images_results.map((img: any, index: number) => ({
+            id: 'serp-' + Date.now() + '-' + index,
+            url: img.original,
+            thumbnail: img.thumbnail,
+            title: img.title || cleanQuery,
+            source: img.source || 'Google Images',
+            width: img.original_width || 0,
+            height: img.original_height || 0
+        }));
 
-                // Sadece görsel dosyalarını kabul et
-                const hasImageExtension = /\.(jpg|jpeg|png|gif|webp|svg)(\?|$)/i.test(url);
-                return hasImageExtension || url.includes('image') || img.thumbnail;
-            });
-
-            // Tercih edilen domainleri öne al
-            const sortedResults = filteredResults.sort((a: any, b: any) => {
-                const aUrl = a.original || '';
-                const bUrl = b.original || '';
-                const aPreferred = PREFERRED_DOMAINS.some(d => aUrl.includes(d));
-                const bPreferred = PREFERRED_DOMAINS.some(d => bUrl.includes(d));
-                return (bPreferred ? 1 : 0) - (aPreferred ? 1 : 0);
-            });
-
-            return res.status(200).json({
-                ...data,
-                images_results: sortedResults,
-                filtered_count: data.images_results.length - sortedResults.length
-            });
-        }
-
-        return res.status(200).json(data);
-
-    } catch (error: any) {
-        console.error('[SerpAPI Proxy] Exception:', error.message);
-        return res.status(500).json({
-            error: 'Proxy request failed',
-            message: error.message
-        });
+    } catch (error) {
+        console.error('[SerpAPI] ❌ Search failed:', error);
+        return [];
     }
-}
+};
+
+/**
+ * Turkish to English topic mapping for better search results
+ */
+const TOPIC_TRANSLATIONS: Record<string, string> = {
+    // Common terms
+    'elektrik': 'electrical',
+    'pano': 'electrical panel switchboard',
+    'kablo': 'cable wiring',
+    'montaj': 'installation mounting',
+    'devre': 'circuit',
+    'şema': 'schematic diagram',
+    'proje': 'project drawing',
+    'aydınlatma': 'lighting',
+    'topraklama': 'grounding earthing',
+    'sigorta': 'fuse circuit breaker',
+    'trafo': 'transformer',
+    'motor': 'motor drive',
+    'kompanzasyon': 'power factor correction capacitor',
+    'ölçüm': 'measurement testing',
+    'bakım': 'maintenance repair',
+    'arıza': 'fault troubleshooting',
+    'tesisat': 'installation wiring',
+    'dağıtım': 'distribution',
+    'kumanda': 'control',
+    'otomasyon': 'automation PLC',
+    'inverter': 'inverter VFD',
+    'kondansatör': 'capacitor',
+    'kontaktör': 'contactor',
+    'röle': 'relay',
+    'şalter': 'switch breaker',
+    'bara': 'busbar',
+    'klemens': 'terminal block',
+    'pabuç': 'cable lug',
+    'multimetre': 'multimeter',
+    'pens': 'clamp meter',
+    'villa': 'residential house',
+    'fabrika': 'factory industrial',
+    'ofis': 'office commercial',
+    'şantiye': 'construction site',
+    'AutoCAD': 'AutoCAD CAD',
+    'tek hat': 'single line diagram',
+    'güç': 'power',
+    'gerilim': 'voltage',
+    'akım': 'current amperage'
+};
+
+/**
+ * Translate Turkish topic to English for better search
+ */
+const translateToEnglish = (topic: string): string => {
+    let result = topic.toLowerCase();
+    
+    // Replace known Turkish terms with English
+    for (const [tr, en] of Object.entries(TOPIC_TRANSLATIONS)) {
+        const regex = new RegExp(tr.toLowerCase(), 'gi');
+        result = result.replace(regex, en);
+    }
+    
+    return result;
+};
+
+/**
+ * Teknik görsel araması için optimize edilmiş query builder
+ * All queries are in English for better results
+ */
+export const buildTechnicalQuery = (
+    topic: string,
+    queryType: 'autocad' | 'saha' | 'tablo' | 'genel' = 'genel'
+): string => {
+    // Translate topic to English
+    const englishTopic = translateToEnglish(topic);
+
+    switch (queryType) {
+        case 'autocad':
+            return `${englishTopic} AutoCAD electrical drawing blueprint schematic`;
+        case 'saha':
+            return `${englishTopic} electrical installation work site electrician`;
+        case 'tablo':
+            return `${englishTopic} electrical diagram chart schematic symbol`;
+        default:
+            return `${englishTopic} electrical`;
+    }
+};
+
+/**
+ * Fallback query'ler - ana sorgu sonuç vermezse
+ * All in English
+ */
+export const getFallbackQueries = (topic: string, queryType: string): string[] => {
+    const englishTopic = translateToEnglish(topic);
+    const baseTopic = englishTopic.split(' ').slice(0, 3).join(' ');
+
+    switch (queryType) {
+        case 'autocad':
+            return [
+                `${baseTopic} electrical drawing CAD`,
+                'electrical wiring diagram AutoCAD',
+                'single line diagram electrical schematic',
+                'electrical floor plan drawing'
+            ];
+        case 'saha':
+            return [
+                `${baseTopic} electrical installation`,
+                'electrician working panel installation',
+                'electrical construction site work',
+                'cable tray installation electrical'
+            ];
+        case 'tablo':
+            return [
+                `${baseTopic} electrical diagram`,
+                'electrical symbols chart reference',
+                'circuit diagram schematic',
+                'electrical wiring diagram symbols'
+            ];
+        default:
+            return [
+                `${baseTopic} electrical`,
+                `${baseTopic} wiring diagram`
+            ];
+    }
+};

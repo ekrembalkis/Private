@@ -503,6 +503,7 @@ export interface CategoryItem {
   wikimediaCategory?: string;
   suggestedTopic: string;
   suggestedPrompt: string;
+  imageType?: 'photo' | 'lineart' | 'clipart'; // NEW: Image type filter
 }
 
 export interface CategoryGroup {
@@ -510,6 +511,7 @@ export interface CategoryGroup {
   name: string;
   icon: string;
   items: CategoryItem[];
+  defaultImageType?: 'photo' | 'lineart' | 'clipart'; // NEW: Default for group
 }
 
 export const PRESET_CATEGORIES: CategoryGroup[] = [
@@ -517,33 +519,37 @@ export const PRESET_CATEGORIES: CategoryGroup[] = [
     id: 'electrical-diagrams',
     name: 'Elektrik Şemaları',
     icon: '📊',
+    defaultImageType: 'lineart', // Diagrams should be lineart
     items: [
       {
         id: 'single-line',
         name: 'Tek Hat Şemaları',
         description: 'Elektrik dağıtım tek hat şemaları',
-        queries: ['single line diagram electrical', 'tek hat şeması elektrik', 'one line diagram power system'],
+        queries: ['single line diagram electrical power', 'one line diagram power distribution', 'electrical single line schematic'],
         wikimediaCategory: 'Electrical_single-line_diagrams',
         suggestedTopic: 'Elektrik tek hat şeması okuma ve çizim',
-        suggestedPrompt: 'Bugün elektrik tek hat şemalarının okunması ve çizimi öğrenildi. Transformatör, şalter, sigorta ve kablo sembolleri incelendi. AutoCAD ortamında tek hat şeması çizimi yapıldı.'
+        suggestedPrompt: 'Bugün elektrik tek hat şemalarının okunması ve çizimi öğrenildi. Transformatör, şalter, sigorta ve kablo sembolleri incelendi. AutoCAD ortamında tek hat şeması çizimi yapıldı.',
+        imageType: 'lineart'
       },
       {
         id: 'wiring-diagrams',
         name: 'Bağlantı Şemaları',
         description: 'Elektrik bağlantı ve kablo şemaları',
-        queries: ['wiring diagram electrical', 'elektrik bağlantı şeması', 'circuit wiring schematic'],
+        queries: ['electrical wiring diagram schematic', 'circuit wiring connection diagram', 'wire connection schematic electrical'],
         wikimediaCategory: 'Wiring_diagrams',
         suggestedTopic: 'Elektrik bağlantı şemalarının incelenmesi',
-        suggestedPrompt: 'Bugün elektrik bağlantı şemaları incelendi. Kablo renk kodları, bağlantı noktaları ve devre elemanları arasındaki bağlantılar öğrenildi.'
+        suggestedPrompt: 'Bugün elektrik bağlantı şemaları incelendi. Kablo renk kodları, bağlantı noktaları ve devre elemanları arasındaki bağlantılar öğrenildi.',
+        imageType: 'lineart'
       },
       {
         id: 'control-circuits',
         name: 'Kumanda Devreleri',
         description: 'Motor ve kumanda devre şemaları',
-        queries: ['motor control circuit diagram', 'kontaktör kumanda devresi', 'PLC ladder diagram'],
+        queries: ['motor control circuit diagram', 'contactor control circuit schematic', 'PLC ladder diagram industrial'],
         wikimediaCategory: 'Control_circuit_diagrams',
         suggestedTopic: 'Motor kumanda devreleri tasarımı',
-        suggestedPrompt: 'Bugün motor kumanda devreleri üzerinde çalışıldı. Kontaktör, röle, termik ve buton bağlantıları incelendi. Yıldız-üçgen yol verme devresi çizildi.'
+        suggestedPrompt: 'Bugün motor kumanda devreleri üzerinde çalışıldı. Kontaktör, röle, termik ve buton bağlantıları incelendi. Yıldız-üçgen yol verme devresi çizildi.',
+        imageType: 'lineart'
       }
     ]
   },
@@ -551,33 +557,37 @@ export const PRESET_CATEGORIES: CategoryGroup[] = [
     id: 'electrical-equipment',
     name: 'Elektrik Ekipmanları',
     icon: '⚡',
+    defaultImageType: 'photo', // Equipment should be photos
     items: [
       {
         id: 'transformers',
         name: 'Transformatörler',
         description: 'Güç ve dağıtım transformatörleri',
-        queries: ['power transformer electrical', 'dağıtım transformatörü', 'transformer substation'],
+        queries: ['power transformer electrical substation', 'distribution transformer installation', 'transformer winding electrical'],
         wikimediaCategory: 'Transformers',
         suggestedTopic: 'Transformatör yapısı ve çalışma prensibi',
-        suggestedPrompt: 'Bugün transformatörlerin yapısı ve çalışma prensibi öğrenildi. Primer ve sekonder sargılar, nüve yapısı, soğutma sistemleri incelendi.'
+        suggestedPrompt: 'Bugün transformatörlerin yapısı ve çalışma prensibi öğrenildi. Primer ve sekonder sargılar, nüve yapısı, soğutma sistemleri incelendi.',
+        imageType: 'photo'
       },
       {
         id: 'switchgear',
         name: 'Şalt Tesisleri',
         description: 'Kesici, ayırıcı ve şalt ekipmanları',
-        queries: ['switchgear electrical', 'kesici ayırıcı şalt', 'circuit breaker panel'],
+        queries: ['switchgear electrical panel', 'circuit breaker switchgear', 'high voltage switchgear installation'],
         wikimediaCategory: 'Switchgear',
         suggestedTopic: 'Şalt tesisleri ve koruma ekipmanları',
-        suggestedPrompt: 'Bugün şalt tesisleri gezildi. Kesici, ayırıcı, topraklama anahtarı ve bara sistemleri incelendi. Koruma koordinasyonu hakkında bilgi edinildi.'
+        suggestedPrompt: 'Bugün şalt tesisleri gezildi. Kesici, ayırıcı, topraklama anahtarı ve bara sistemleri incelendi. Koruma koordinasyonu hakkında bilgi edinildi.',
+        imageType: 'photo'
       },
       {
         id: 'panels',
         name: 'Elektrik Panoları',
         description: 'Dağıtım ve kumanda panoları',
-        queries: ['electrical panel distribution', 'elektrik dağıtım panosu', 'MCC panel motor control'],
+        queries: ['electrical distribution panel board', 'motor control center MCC panel', 'electrical panel wiring installation'],
         wikimediaCategory: 'Electrical_panels',
         suggestedTopic: 'Elektrik pano montajı ve bağlantıları',
-        suggestedPrompt: 'Bugün elektrik pano montajı yapıldı. Şalter, sigorta, kontaktör ve kablo bağlantıları gerçekleştirildi. Kablo düzeni ve etiketleme kuralları öğrenildi.'
+        suggestedPrompt: 'Bugün elektrik pano montajı yapıldı. Şalter, sigorta, kontaktör ve kablo bağlantıları gerçekleştirildi. Kablo düzeni ve etiketleme kuralları öğrenildi.',
+        imageType: 'photo'
       }
     ]
   },
@@ -585,33 +595,37 @@ export const PRESET_CATEGORIES: CategoryGroup[] = [
     id: 'installation',
     name: 'Tesisat ve Montaj',
     icon: '🔧',
+    defaultImageType: 'photo', // Installation work should be photos
     items: [
       {
         id: 'cable-laying',
         name: 'Kablo Döşeme',
         description: 'Kablo tavası ve döşeme işleri',
-        queries: ['cable tray installation', 'kablo tavası döşeme', 'electrical cable laying'],
+        queries: ['cable tray installation electrical', 'electrical cable laying work', 'cable routing installation industrial'],
         wikimediaCategory: 'Electrical_cables',
         suggestedTopic: 'Kablo döşeme ve tava montajı',
-        suggestedPrompt: 'Bugün kablo döşeme çalışmaları yapıldı. Kablo tavası montajı, kablo çekme teknikleri ve bükülme yarıçapları öğrenildi.'
+        suggestedPrompt: 'Bugün kablo döşeme çalışmaları yapıldı. Kablo tavası montajı, kablo çekme teknikleri ve bükülme yarıçapları öğrenildi.',
+        imageType: 'photo'
       },
       {
         id: 'conduit',
         name: 'Boru Tesisatı',
         description: 'Elektrik boru ve kanal sistemleri',
-        queries: ['electrical conduit installation', 'elektrik boru tesisatı', 'rigid conduit work'],
+        queries: ['electrical conduit installation', 'rigid conduit electrical work', 'EMT conduit wiring installation'],
         wikimediaCategory: 'Electrical_conduit',
         suggestedTopic: 'Elektrik boru tesisatı kurulumu',
-        suggestedPrompt: 'Bugün elektrik boru tesisatı çalışmaları gerçekleştirildi. Sert boru, spiral boru ve fleksibıl boru kullanımı öğrenildi.'
+        suggestedPrompt: 'Bugün elektrik boru tesisatı çalışmaları gerçekleştirildi. Sert boru, spiral boru ve fleksibıl boru kullanımı öğrenildi.',
+        imageType: 'photo'
       },
       {
         id: 'grounding',
         name: 'Topraklama',
         description: 'Topraklama sistemleri kurulumu',
-        queries: ['electrical grounding system', 'topraklama tesisatı', 'earthing installation'],
+        queries: ['electrical grounding system installation', 'earthing ground rod installation', 'grounding electrode electrical'],
         wikimediaCategory: 'Electrical_grounding',
         suggestedTopic: 'Topraklama sistemi kurulumu',
-        suggestedPrompt: 'Bugün topraklama sistemi kurulumu yapıldı. Topraklama çubuğu, iletken bağlantıları ve topraklama direnci ölçümü öğrenildi.'
+        suggestedPrompt: 'Bugün topraklama sistemi kurulumu yapıldı. Topraklama çubuğu, iletken bağlantıları ve topraklama direnci ölçümü öğrenildi.',
+        imageType: 'photo'
       }
     ]
   },
@@ -619,24 +633,27 @@ export const PRESET_CATEGORIES: CategoryGroup[] = [
     id: 'safety',
     name: 'İş Güvenliği',
     icon: '🦺',
+    defaultImageType: 'clipart', // Safety symbols are often clipart
     items: [
       {
         id: 'safety-symbols',
         name: 'İş Güvenliği Sembolleri',
         description: 'İSG sembolleri ve işaretleri',
-        queries: ['safety symbols ISO 7010 electrical', 'hazard warning symbols industry', 'prohibition signs workplace'],
+        queries: ['electrical safety warning signs', 'hazard warning symbols ISO 7010', 'electrical danger signs symbols'],
         wikimediaCategory: 'Safety_symbols',
         suggestedTopic: 'İş sağlığı ve güvenliği sembolleri eğitimi',
-        suggestedPrompt: 'Bugün iş güvenliği sembolleri ve işaretleri öğrenildi. Yasak, zorunluluk, uyarı ve acil durum işaretleri incelendi. İşyerinde güvenli çalışma prosedürleri değerlendirildi.'
+        suggestedPrompt: 'Bugün iş güvenliği sembolleri ve işaretleri öğrenildi. Yasak, zorunluluk, uyarı ve acil durum işaretleri incelendi. İşyerinde güvenli çalışma prosedürleri değerlendirildi.',
+        imageType: 'clipart'
       },
       {
         id: 'ppe',
         name: 'Kişisel Koruyucu Donanım',
         description: 'KKD görselleri',
-        queries: ['electrical PPE insulated gloves', 'electrician safety equipment', 'arc flash protective gear'],
+        queries: ['electrical PPE insulated gloves', 'electrician safety equipment gear', 'arc flash protective equipment'],
         wikimediaCategory: 'Electrical_safety',
         suggestedTopic: 'Kişisel koruyucu donanım (KKD) eğitimi',
-        suggestedPrompt: 'Bugün elektrik çalışmalarında kullanılan kişisel koruyucu donanımlar öğrenildi. İzole eldiven, koruyucu gözlük, iş ayakkabısı ve yüz siperi kullanımı incelendi. KKD seçim ve bakım kuralları değerlendirildi.'
+        suggestedPrompt: 'Bugün elektrik çalışmalarında kullanılan kişisel koruyucu donanımlar öğrenildi. İzole eldiven, koruyucu gözlük, iş ayakkabısı ve yüz siperi kullanımı incelendi. KKD seçim ve bakım kuralları değerlendirildi.',
+        imageType: 'photo'
       }
     ]
   }
@@ -644,6 +661,7 @@ export const PRESET_CATEGORIES: CategoryGroup[] = [
 
 /**
  * Strateji bazlı kategori araması
+ * SerpAPI temel motor olarak kullanılır
  */
 export const searchByCategory = async (
   categoryId: string,
@@ -653,10 +671,13 @@ export const searchByCategory = async (
 
   // Önce preset kategorilerde ara
   let category: CategoryItem | null = null;
+  let parentGroup: CategoryGroup | null = null;
+  
   for (const group of PRESET_CATEGORIES) {
     const found = group.items.find(item => item.id === categoryId);
     if (found) {
       category = found;
+      parentGroup = group;
       break;
     }
   }
@@ -669,15 +690,21 @@ export const searchByCategory = async (
   // Kategori varsa query'leri kullan
   if (category) {
     console.log('Category found:', category.name);
+    
+    // imageType belirleme: önce item'dan, yoksa grup default'undan
+    const imageType = category.imageType || parentGroup?.defaultImageType;
+    console.log('Image Type Filter:', imageType || 'none');
 
-    // SerpAPI ile ara
+    // SerpAPI ile ara (TEMEL MOTOR)
     const serpApiKey = getSerpApiKey();
     if (serpApiKey) {
       for (const query of category.queries) {
         if (allResults.length >= count) break;
 
         const results = await searchImagesSerpAPI(query, serpApiKey, {
-          count: Math.min(10, count - allResults.length)
+          count: Math.min(10, count - allResults.length),
+          imageType: imageType, // imageType filtresi eklendi
+          safeSearch: true
         });
 
         const newResults = results
@@ -691,15 +718,18 @@ export const searchByCategory = async (
           }));
 
         allResults = [...allResults, ...newResults];
-        console.log(`Query "${query}" - Total: ${allResults.length}`);
+        console.log(`Query "${query}" - Found: ${results.length}, Total: ${allResults.length}`);
 
         // Rate limit
         await new Promise(r => setTimeout(r, 200));
       }
+    } else {
+      console.warn('[searchByCategory] ⚠️ SerpAPI key not found!');
     }
 
-    // Wikimedia kategori varsa oradan da al
+    // Wikimedia kategori varsa oradan da tamamla
     if (category.wikimediaCategory && allResults.length < count) {
+      console.log('Supplementing from Wikimedia:', category.wikimediaCategory);
       const wikiResults = await searchWikimediaByCategoryName(
         category.wikimediaCategory,
         count - allResults.length
@@ -708,6 +738,7 @@ export const searchByCategory = async (
         !allResults.some(existing => existing.url === r.url)
       );
       allResults = [...allResults, ...newWikiResults];
+      console.log(`Wikimedia added ${newWikiResults.length} results`);
     }
   }
 

@@ -2,6 +2,7 @@
  * SerpAPI Image Search Service
  * Emity v2'den adapte edilmiş - Staj Defteri için özelleştirilmiş
  * Vercel Proxy üzerinden CORS sorunları çözülmüş
+ * Query'ler İngilizce - Daha iyi sonuçlar için
  */
 
 export interface SerpAPIImage {
@@ -47,8 +48,8 @@ export const searchImagesSerpAPI = async (
             engine: 'google_images',
             num: String(Math.min(count, 100)), // SerpAPI max 100
             safe: safeSearch ? 'active' : 'off',
-            hl: 'tr', // Türkçe sonuçlar
-            gl: 'tr'  // Türkiye lokasyonu
+            hl: 'en', // English results for better quality
+            gl: 'us'  // US location for more results
         });
 
         // Görsel tipi filtresi
@@ -90,55 +91,123 @@ export const searchImagesSerpAPI = async (
 };
 
 /**
+ * Turkish to English topic mapping for better search results
+ */
+const TOPIC_TRANSLATIONS: Record<string, string> = {
+    // Common terms
+    'elektrik': 'electrical',
+    'pano': 'electrical panel switchboard',
+    'kablo': 'cable wiring',
+    'montaj': 'installation mounting',
+    'devre': 'circuit',
+    'şema': 'schematic diagram',
+    'proje': 'project drawing',
+    'aydınlatma': 'lighting',
+    'topraklama': 'grounding earthing',
+    'sigorta': 'fuse circuit breaker',
+    'trafo': 'transformer',
+    'motor': 'motor drive',
+    'kompanzasyon': 'power factor correction capacitor',
+    'ölçüm': 'measurement testing',
+    'bakım': 'maintenance repair',
+    'arıza': 'fault troubleshooting',
+    'tesisat': 'installation wiring',
+    'dağıtım': 'distribution',
+    'kumanda': 'control',
+    'otomasyon': 'automation PLC',
+    'inverter': 'inverter VFD',
+    'kondansatör': 'capacitor',
+    'kontaktör': 'contactor',
+    'röle': 'relay',
+    'şalter': 'switch breaker',
+    'bara': 'busbar',
+    'klemens': 'terminal block',
+    'pabuç': 'cable lug',
+    'multimetre': 'multimeter',
+    'pens': 'clamp meter',
+    'villa': 'residential house',
+    'fabrika': 'factory industrial',
+    'ofis': 'office commercial',
+    'şantiye': 'construction site',
+    'AutoCAD': 'AutoCAD CAD',
+    'tek hat': 'single line diagram',
+    'güç': 'power',
+    'gerilim': 'voltage',
+    'akım': 'current amperage'
+};
+
+/**
+ * Translate Turkish topic to English for better search
+ */
+const translateToEnglish = (topic: string): string => {
+    let result = topic.toLowerCase();
+    
+    // Replace known Turkish terms with English
+    for (const [tr, en] of Object.entries(TOPIC_TRANSLATIONS)) {
+        const regex = new RegExp(tr.toLowerCase(), 'gi');
+        result = result.replace(regex, en);
+    }
+    
+    return result;
+};
+
+/**
  * Teknik görsel araması için optimize edilmiş query builder
+ * All queries are in English for better results
  */
 export const buildTechnicalQuery = (
     topic: string,
     queryType: 'autocad' | 'saha' | 'tablo' | 'genel' = 'genel'
 ): string => {
-    const baseTopic = topic.trim();
+    // Translate topic to English
+    const englishTopic = translateToEnglish(topic);
 
     switch (queryType) {
         case 'autocad':
-            return `${baseTopic} AutoCAD elektrik proje çizim teknik`;
+            return `${englishTopic} AutoCAD electrical drawing blueprint schematic`;
         case 'saha':
-            return `${baseTopic} elektrik montaj kurulum saha çalışması`;
+            return `${englishTopic} electrical installation work site electrician`;
         case 'tablo':
-            return `${baseTopic} elektrik şema diyagram devre`;
+            return `${englishTopic} electrical diagram chart schematic symbol`;
         default:
-            return baseTopic;
+            return `${englishTopic} electrical`;
     }
 };
 
 /**
  * Fallback query'ler - ana sorgu sonuç vermezse
+ * All in English
  */
 export const getFallbackQueries = (topic: string, queryType: string): string[] => {
-    const baseTopic = topic.split(' ').slice(0, 3).join(' ');
+    const englishTopic = translateToEnglish(topic);
+    const baseTopic = englishTopic.split(' ').slice(0, 3).join(' ');
 
     switch (queryType) {
         case 'autocad':
             return [
-                `${baseTopic} electrical drawing`,
-                'elektrik tesisat projesi AutoCAD',
-                'electrical wiring diagram schematic',
-                'single line diagram electrical'
+                `${baseTopic} electrical drawing CAD`,
+                'electrical wiring diagram AutoCAD',
+                'single line diagram electrical schematic',
+                'electrical floor plan drawing'
             ];
         case 'saha':
             return [
-                `${baseTopic} installation`,
-                'elektrik pano montaj',
-                'electrical installation work',
-                'electrician work site'
+                `${baseTopic} electrical installation`,
+                'electrician working panel installation',
+                'electrical construction site work',
+                'cable tray installation electrical'
             ];
         case 'tablo':
             return [
-                `${baseTopic} circuit diagram`,
-                'elektrik sembol tablosu',
-                'electrical symbols chart',
-                'circuit schematic diagram'
+                `${baseTopic} electrical diagram`,
+                'electrical symbols chart reference',
+                'circuit diagram schematic',
+                'electrical wiring diagram symbols'
             ];
         default:
-            return [baseTopic + ' elektrik', baseTopic + ' electrical'];
+            return [
+                `${baseTopic} electrical`,
+                `${baseTopic} wiring diagram`
+            ];
     }
 };
