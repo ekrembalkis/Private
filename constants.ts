@@ -1,4 +1,3 @@
-
 import { InternshipType } from './types';
 
 export const STUDENT_INFO = {
@@ -68,7 +67,33 @@ export const PRODUCTION_TOPICS = [
   "Bir konut projesinin zayıf akım (data/telefon) sonlandırma işlemleri",
   "Jeneratör transfer panosu (ATS) çalışma prensibi incelemesi ve testi",
   "Kaçak akım rölesi (KAR) açma akımı ve süresi testi",
-  "Termal kamera ile pano içi ısınan bağlantı noktalarının tespiti"
+  "Termal kamera ile pano içi ısınan bağlantı noktalarının tespiti",
+  // === TEKNİK TABLOLAR KATEGORİSİ ===
+  "Trafo Dyn11 bağlantı grubu vektör diyagramı incelemesi ve paralel çalışma koşulları",
+  "Akım trafosu (CT) oran ve doğruluk sınıfı seçimi için katalog çalışması",
+  "Gerilim düşümü hesap tabloları kullanılarak kablo kesiti belirleme",
+  "Bakır ve alüminyum bara akım taşıma kapasite tablolarının incelenmesi",
+  "Kompanzasyon sistemi için cos φ tabloları ile kVAr hesabı yapılması",
+  "Harmonik distorsiyon (THD) limitleri ve IEEE 519 standardı incelemesi",
+  "UPS boyutlandırma tabloları ile yük ve batarya süresi hesabı",
+  "Jeneratör kapasite tabloları kullanılarak yük analizi ve seçim çalışması",
+  "Aşırı gerilim koruma (SPD) Tip 1, 2, 3 seçim tabloları incelemesi",
+  "IK darbe dayanım sınıfları tablosu ile armatür koruma seviyesi belirleme",
+  "Kablo tavası doluluk oranı tabloları ile kapasite hesabı",
+  "Boru içi kablo sayısı tabloları kullanılarak konduit boyutlandırma",
+  "PLC dijital ve analog I/O modül tipleri karşılaştırma tablosu incelemesi",
+  "Güneş paneli (PV) sistem boyutlandırma tabloları ile inverter seçimi",
+  "Akü/batarya Ah kapasite ve deşarj eğrisi tablolarının incelenmesi",
+  "Motor verimlilik sınıfları (IE1, IE2, IE3, IE4) karşılaştırma tablosu",
+  "Yangın dayanımlı kablo (FE180, LSZH) seçim tabloları ve standartları",
+  "Patlayıcı ortam (Ex) koruma sınıfları ve ATEX zone tabloları incelemesi",
+  "Termik röle trip sınıfları (Class 10, 20, 30) ve ayar tabloları",
+  "Kontaktör kullanım kategorileri (AC1, AC3, AC4) seçim tablosu çalışması",
+  "Yıldırımdan koruma seviyesi (LPL) tabloları ve koruma açısı hesabı",
+  "Kısa devre akımı hesap tabloları ile şalter kesme kapasitesi seçimi",
+  "Endüstriyel sensör çıkış tipleri (NPN/PNP) bağlantı şemaları incelemesi",
+  "Servo motor boyutlandırma tabloları ile tork ve atalet hesabı",
+  "Modbus RTU/TCP register ve fonksiyon kodu tabloları incelemesi"
 ];
 
 // İşletme ve Yönetim Konu Havuzu (Spesifik Aktiviteler)
