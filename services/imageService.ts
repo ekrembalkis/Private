@@ -661,6 +661,239 @@ export const PRESET_CATEGORIES: CategoryGroup[] = [
         imageType: 'photo'
       }
     ]
+  },
+  {
+    id: 'technical-tables',
+    name: 'Teknik Tablolar',
+    icon: '📋',
+    defaultImageType: 'lineart',
+    items: [
+      {
+        id: 'transformer-vector-groups',
+        name: 'Trafo Bağlantı Grupları',
+        description: 'Dyn11, Yy0, Dd0 vektör grupları',
+        queries: ['transformer vector group chart Dyn11 Yy0', 'transformer winding connection diagram', 'three phase transformer vector group table'],
+        suggestedTopic: 'Transformatör bağlantı grupları ve vektör diyagramları',
+        suggestedPrompt: 'Bugün transformatör bağlantı grupları incelendi. Dyn11, Yy0, Dd0 gibi yaygın bağlantı tipleri ve vektör diyagramları öğrenildi. Faz kayması ve paralel çalışma koşulları değerlendirildi.',
+        imageType: 'lineart'
+      },
+      {
+        id: 'ct-selection',
+        name: 'Akım Trafosu (CT) Seçim Tabloları',
+        description: 'CT oran ve sınıf seçimi',
+        queries: ['current transformer CT ratio selection chart', 'CT accuracy class table 0.5 1.0', 'current transformer burden VA chart'],
+        suggestedTopic: 'Akım trafosu seçimi ve bağlantısı',
+        suggestedPrompt: 'Bugün akım trafosu (CT) seçim kriterleri öğrenildi. Oran seçimi, doğruluk sınıfları (0.5, 1.0, 5P) ve burden hesaplaması incelendi. Koruma ve ölçüm CT farkları değerlendirildi.',
+        imageType: 'lineart'
+      },
+      {
+        id: 'voltage-drop',
+        name: 'Gerilim Düşümü Hesap Tabloları',
+        description: 'Mesafe ve kesit bazlı gerilim düşümü',
+        queries: ['voltage drop calculation table chart', 'cable voltage drop percentage table', 'wire size voltage drop distance chart'],
+        suggestedTopic: 'Gerilim düşümü hesaplama ve kablo seçimi',
+        suggestedPrompt: 'Bugün gerilim düşümü hesaplama yöntemleri öğrenildi. Kablo uzunluğu, kesit ve akım değerlerine göre düşüm tabloları incelendi. İzin verilen düşüm limitleri değerlendirildi.',
+        imageType: 'lineart'
+      },
+      {
+        id: 'busbar-capacity',
+        name: 'Bara Akım Kapasitesi Tabloları',
+        description: 'Bakır ve alüminyum bara kapasiteleri',
+        queries: ['busbar current capacity table copper aluminum', 'busbar ampacity rating chart', 'copper busbar size current table'],
+        suggestedTopic: 'Bara sistemleri ve akım taşıma kapasiteleri',
+        suggestedPrompt: 'Bugün bara sistemleri ve akım taşıma kapasiteleri incelendi. Bakır ve alüminyum bara kesitleri, sıcaklık artışı ve kapasite tabloları öğrenildi.',
+        imageType: 'lineart'
+      },
+      {
+        id: 'power-factor-correction',
+        name: 'Kompanzasyon cos φ Tabloları',
+        description: 'Reaktif güç ve kVAr hesabı',
+        queries: ['power factor correction kVAr table chart', 'capacitor bank sizing table cos phi', 'reactive power compensation calculation table'],
+        suggestedTopic: 'Güç faktörü düzeltme ve kompanzasyon',
+        suggestedPrompt: 'Bugün güç faktörü düzeltme (kompanzasyon) sistemleri öğrenildi. cos φ iyileştirme tabloları, kondansatör seçimi ve reaktif güç hesabı incelendi.',
+        imageType: 'lineart'
+      },
+      {
+        id: 'harmonic-limits',
+        name: 'Harmonik Distorsiyon Limitleri',
+        description: 'THD ve IEEE 519 limitleri',
+        queries: ['harmonic distortion THD limits table IEEE 519', 'voltage current harmonic limits chart', 'power quality harmonic standard table'],
+        suggestedTopic: 'Harmonik analizi ve güç kalitesi',
+        suggestedPrompt: 'Bugün harmonik distorsiyon ve güç kalitesi konuları incelendi. THD limitleri, IEEE 519 standardı ve harmonik filtreleme yöntemleri öğrenildi.',
+        imageType: 'lineart'
+      },
+      {
+        id: 'ups-sizing',
+        name: 'UPS Boyutlandırma Tabloları',
+        description: 'kVA ve batarya süresi hesabı',
+        queries: ['UPS sizing calculation table kVA', 'UPS battery runtime chart', 'uninterruptible power supply capacity table'],
+        suggestedTopic: 'UPS sistemleri ve boyutlandırma',
+        suggestedPrompt: 'Bugün kesintisiz güç kaynağı (UPS) sistemleri incelendi. Yük hesabı, batarya kapasitesi ve çalışma süresi tabloları öğrenildi. Online ve offline UPS farkları değerlendirildi.',
+        imageType: 'lineart'
+      },
+      {
+        id: 'generator-sizing',
+        name: 'Jeneratör Boyutlandırma Tabloları',
+        description: 'kVA ve yük hesabı',
+        queries: ['generator sizing kVA load calculation table', 'diesel generator capacity chart', 'standby generator sizing guide table'],
+        suggestedTopic: 'Jeneratör sistemleri ve kapasite hesabı',
+        suggestedPrompt: 'Bugün jeneratör boyutlandırma kriterleri öğrenildi. Motor yol alma akımları, güç faktörü ve yük tipleri dikkate alınarak kapasite hesabı yapıldı.',
+        imageType: 'lineart'
+      },
+      {
+        id: 'spd-types',
+        name: 'Parafudr/SPD Tip Tabloları',
+        description: 'Tip 1, 2, 3 aşırı gerilim koruma',
+        queries: ['surge protector SPD type 1 2 3 chart', 'lightning arrester classification table', 'surge protection device selection guide'],
+        suggestedTopic: 'Aşırı gerilim koruma (SPD) sistemleri',
+        suggestedPrompt: 'Bugün aşırı gerilim koruma cihazları (SPD) incelendi. Tip 1, 2 ve 3 sınıflandırması, koruma seviyeleri ve kaskad koordinasyonu öğrenildi.',
+        imageType: 'lineart'
+      },
+      {
+        id: 'ik-rating',
+        name: 'IK Darbe Dayanım Sınıfları',
+        description: 'IK01 den IK10 a mekanik koruma',
+        queries: ['IK rating impact protection chart table', 'mechanical protection IK code classification', 'IK rating joules impact resistance'],
+        suggestedTopic: 'IK koruma sınıfları ve mekanik dayanım',
+        suggestedPrompt: 'Bugün IK koruma sınıfları öğrenildi. IK00 dan IK10 a kadar darbe dayanım seviyeleri, joule değerleri ve uygulama alanları incelendi.',
+        imageType: 'lineart'
+      },
+      {
+        id: 'cable-tray-fill',
+        name: 'Kablo Tava Doluluk Oranları',
+        description: 'Tava kapasite hesabı',
+        queries: ['cable tray fill ratio capacity chart', 'cable tray sizing calculation table', 'wire way fill percentage table'],
+        suggestedTopic: 'Kablo tavası seçimi ve doluluk hesabı',
+        suggestedPrompt: 'Bugün kablo tavası boyutlandırma kriterleri öğrenildi. Doluluk oranları, ısı yayılımı ve kapasite düşürme faktörleri incelendi.',
+        imageType: 'lineart'
+      },
+      {
+        id: 'conduit-fill',
+        name: 'Boru İçi Kablo Sayısı Tabloları',
+        description: 'Boru çapı ve kablo kapasitesi',
+        queries: ['conduit fill chart wire capacity table', 'electrical conduit size cable number', 'NEC conduit fill percentage table'],
+        suggestedTopic: 'Elektrik borusu seçimi ve kablo kapasitesi',
+        suggestedPrompt: 'Bugün elektrik borusu boyutlandırma kuralları öğrenildi. Boru çapına göre kablo sayısı, doluluk yüzdeleri ve çekme hesabı incelendi.',
+        imageType: 'lineart'
+      },
+      {
+        id: 'plc-io-modules',
+        name: 'PLC I/O Modül Tipleri',
+        description: 'Dijital ve analog modül seçimi',
+        queries: ['PLC IO module types chart digital analog', 'PLC input output module selection table', 'programmable logic controller IO specifications'],
+        suggestedTopic: 'PLC giriş/çıkış modülleri ve seçimi',
+        suggestedPrompt: 'Bugün PLC I/O modül tipleri incelendi. Dijital giriş/çıkış, analog giriş/çıkış ve özel fonksiyon modülleri öğrenildi. Sinyal tipleri ve gerilim seviyeleri değerlendirildi.',
+        imageType: 'lineart'
+      },
+      {
+        id: 'solar-pv-sizing',
+        name: 'Güneş Paneli (PV) Sistem Tabloları',
+        description: 'Panel ve inverter boyutlandırma',
+        queries: ['solar PV system sizing chart table', 'photovoltaic panel watt calculation', 'solar inverter sizing guide table'],
+        suggestedTopic: 'Güneş enerjisi sistemleri ve boyutlandırma',
+        suggestedPrompt: 'Bugün fotovoltaik (PV) sistem tasarımı öğrenildi. Panel kapasitesi, inverter seçimi ve şebeke bağlantı kriterleri incelendi.',
+        imageType: 'lineart'
+      },
+      {
+        id: 'battery-capacity',
+        name: 'Akü/Batarya Kapasite Tabloları',
+        description: 'Ah kapasite ve deşarj eğrileri',
+        queries: ['battery capacity Ah discharge rate table', 'lead acid battery discharge curve chart', 'lithium battery capacity temperature table'],
+        suggestedTopic: 'Akü sistemleri ve kapasite hesabı',
+        suggestedPrompt: 'Bugün akü/batarya sistemleri incelendi. Ah kapasite hesabı, deşarj eğrileri ve sıcaklık etkileri öğrenildi. Kurşun asit ve lityum batarya farkları değerlendirildi.',
+        imageType: 'lineart'
+      },
+      {
+        id: 'motor-efficiency-class',
+        name: 'Motor Verimlilik Sınıfları (IE)',
+        description: 'IE1, IE2, IE3, IE4 standartları',
+        queries: ['motor efficiency class IE1 IE2 IE3 IE4 chart', 'electric motor efficiency standard table', 'IEC motor efficiency classification'],
+        suggestedTopic: 'Motor verimlilik sınıfları ve enerji tasarrufu',
+        suggestedPrompt: 'Bugün elektrik motoru verimlilik sınıfları öğrenildi. IE1 den IE4 e kadar verimlilik seviyeleri, enerji tasarrufu ve yasal gereklilikler incelendi.',
+        imageType: 'lineart'
+      },
+      {
+        id: 'cable-fire-rating',
+        name: 'Kablo Yangın Dayanım Sınıfları',
+        description: 'FE180, LSZH, halojensiz kablolar',
+        queries: ['cable fire resistance rating chart FE180', 'fire rated cable classification table', 'LSZH low smoke cable standard'],
+        suggestedTopic: 'Yangın dayanımlı kablo seçimi',
+        suggestedPrompt: 'Bugün yangına dayanıklı kablo tipleri öğrenildi. FE180, LSZH, halojensiz kablolar ve yangın anında devre bütünlüğü gereksinimleri incelendi.',
+        imageType: 'lineart'
+      },
+      {
+        id: 'ex-proof-rating',
+        name: 'Ex Proof Koruma Sınıfları',
+        description: 'ATEX ve patlayıcı ortam sınıfları',
+        queries: ['explosion proof Ex rating ATEX chart', 'hazardous area classification zone table', 'Ex d Ex e Ex i protection type'],
+        suggestedTopic: 'Patlayıcı ortam ekipman seçimi (Ex Proof)',
+        suggestedPrompt: 'Bugün patlayıcı ortam (Ex) sınıflandırması öğrenildi. Zone 0, 1, 2 tanımları, Ex d/e/i koruma tipleri ve ATEX gereksinimleri incelendi.',
+        imageType: 'lineart'
+      },
+      {
+        id: 'thermal-relay-setting',
+        name: 'Termik Röle Ayar Tabloları',
+        description: 'Aşırı akım koruma ayarları',
+        queries: ['thermal overload relay setting chart table', 'motor protection relay adjustment', 'overload relay trip class 10 20 30'],
+        suggestedTopic: 'Termik röle ayarı ve motor koruması',
+        suggestedPrompt: 'Bugün termik röle ayarlama prensipleri öğrenildi. Trip sınıfları (Class 10, 20, 30), ayar aralıkları ve motor koruma koordinasyonu incelendi.',
+        imageType: 'lineart'
+      },
+      {
+        id: 'contactor-categories',
+        name: 'Kontaktör Kullanım Kategorileri',
+        description: 'AC1, AC3, AC4 kategorileri',
+        queries: ['contactor utilization category AC1 AC3 AC4 table', 'contactor selection application chart', 'IEC contactor duty category'],
+        suggestedTopic: 'Kontaktör seçimi ve kullanım kategorileri',
+        suggestedPrompt: 'Bugün kontaktör kullanım kategorileri öğrenildi. AC1 (rezistif), AC3 (motor), AC4 (ağır yol verme) kategorileri ve seçim kriterleri incelendi.',
+        imageType: 'lineart'
+      },
+      {
+        id: 'lightning-protection',
+        name: 'Yıldırımdan Koruma Seviyeleri',
+        description: 'LPL I, II, III, IV seviyeleri',
+        queries: ['lightning protection level LPL chart table', 'lightning rod protection angle table', 'IEC 62305 protection level'],
+        suggestedTopic: 'Yıldırımdan koruma sistemi tasarımı',
+        suggestedPrompt: 'Bugün yıldırımdan koruma seviyeleri (LPL) öğrenildi. Koruma açıları, yuvarlanma küresi yöntemi ve iletken boyutları incelendi.',
+        imageType: 'lineart'
+      },
+      {
+        id: 'short-circuit-current',
+        name: 'Kısa Devre Akım Tabloları',
+        description: 'Arıza akımı hesaplama',
+        queries: ['short circuit current calculation table kA', 'fault current level chart electrical', 'prospective short circuit current table'],
+        suggestedTopic: 'Kısa devre akımı hesabı ve koruma koordinasyonu',
+        suggestedPrompt: 'Bugün kısa devre akımı hesaplama yöntemleri öğrenildi. Simetrik ve asimetrik akımlar, kesme kapasitesi seçimi ve koruma koordinasyonu incelendi.',
+        imageType: 'lineart'
+      },
+      {
+        id: 'sensor-output-types',
+        name: 'Sensör Çıkış Tipleri (NPN/PNP)',
+        description: 'Sensör bağlantı şemaları',
+        queries: ['sensor output type NPN PNP wiring diagram', 'proximity sensor connection chart', 'sinking sourcing sensor output table'],
+        suggestedTopic: 'Endüstriyel sensör tipleri ve bağlantıları',
+        suggestedPrompt: 'Bugün endüstriyel sensör çıkış tipleri öğrenildi. NPN (sinking) ve PNP (sourcing) farkları, 2/3/4 telli bağlantılar incelendi.',
+        imageType: 'lineart'
+      },
+      {
+        id: 'servo-motor-sizing',
+        name: 'Servo Motor Boyutlandırma',
+        description: 'Tork ve hız hesabı',
+        queries: ['servo motor sizing torque speed chart', 'servo drive selection calculation table', 'servo motor inertia ratio guide'],
+        suggestedTopic: 'Servo motor ve sürücü seçimi',
+        suggestedPrompt: 'Bugün servo motor boyutlandırma kriterleri öğrenildi. Tork hesabı, atalet oranı ve hız/tork eğrileri incelendi. Sürücü eşleştirme prensipleri değerlendirildi.',
+        imageType: 'lineart'
+      },
+      {
+        id: 'modbus-protocol',
+        name: 'Modbus/Ethernet Protokol Tabloları',
+        description: 'Register ve adres tabloları',
+        queries: ['Modbus RTU TCP register address table', 'Modbus function code chart', 'industrial protocol communication table'],
+        suggestedTopic: 'Endüstriyel haberleşme protokolleri',
+        suggestedPrompt: 'Bugün Modbus haberleşme protokolü öğrenildi. RTU ve TCP farkları, register tipleri, fonksiyon kodları ve adres yapısı incelendi.',
+        imageType: 'lineart'
+      }
+    ]
   }
 ];
 
