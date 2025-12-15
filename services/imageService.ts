@@ -4,7 +4,7 @@
  * + Wikimedia Commons desteği korunmuş
  */
 
-import { searchImagesSerpAPI, buildTechnicalQuery, getFallbackQueries, SerpAPIImage } from './serpApiService';
+import { searchImagesSerpAPI, buildTechnicalQuery, getFallbackQueries, translateToEnglish, SerpAPIImage } from './serpApiService';
 import { getSearchConfig, SearchStrategy } from './searchTermsLibrary';
 
 export interface StockImage {
@@ -442,7 +442,11 @@ export const searchImages = async (
   imageType: string = 'autocad'
 ): Promise<StockImage[]> => {
   console.log('=== IMAGE SEARCH START ===');
-  console.log('Topic:', topic);
+  console.log('Original Topic (TR):', topic);
+  
+  // Önce topic'i İngilizceye çevir - tüm stratejilerde kullanılacak
+  const englishTopic = translateToEnglish(topic);
+  console.log('Translated Topic (EN):', englishTopic);
   console.log('Type:', imageType);
   console.log('Count:', count);
 
@@ -453,7 +457,7 @@ export const searchImages = async (
   if (serpApiKey) {
     console.log('Strategy 1: SerpAPI');
     const serpResults = await searchImagesWithSerpAPI(
-      topic,
+      englishTopic,  // İngilizce topic
       count,
       imageType as 'autocad' | 'saha' | 'tablo' | 'genel'
     );
@@ -464,7 +468,7 @@ export const searchImages = async (
   // 2. Yetersizse Wikimedia Commons'dan tamamla
   if (allResults.length < count && (imageType === 'autocad' || imageType === 'tablo')) {
     console.log('Strategy 2: Wikimedia Commons');
-    const wikiResults = await searchWikimediaImages(topic, count - allResults.length);
+    const wikiResults = await searchWikimediaImages(englishTopic, count - allResults.length);
     // Duplicate URL'leri filtrele
     const newWikiResults = wikiResults.filter(r =>
       !allResults.some(existing => existing.url === r.url)
@@ -476,7 +480,7 @@ export const searchImages = async (
   // 3. Hala yetersizse Google Custom Search
   if (allResults.length < 5) {
     console.log('Strategy 3: Google Custom Search (fallback)');
-    const googleResults = await searchGoogleImages(topic, 10, imageType);
+    const googleResults = await searchGoogleImages(englishTopic, 10, imageType);
     const newGoogleResults = googleResults.filter(r =>
       !allResults.some(existing => existing.url === r.url)
     );
