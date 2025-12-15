@@ -13,6 +13,7 @@ import {
   getAccumulatedTools
 } from '../curriculum';
 import { GenerationContext } from '../curriculumTypes';
+import { getExclusionPromptText, EXCLUDED_KEYWORDS } from '../excludedTopics';
 
 // Initialize the API client
 const getAiClient = () => {
@@ -229,6 +230,8 @@ EK KURALLAR (PROGRESSIVE LEARNING):
 6. Daha önce kullanılan aletlere "artık aşina olduğum multimetre ile..." gibi doğal referanslar ver.
 7. Hafta başlarında hafta temasına uygun giriş yap.
 8. Önemli milestone günlerinde (5, 10, 15, 20, 25, 30) özet/değerlendirme hissi ver.
+
+${getExclusionPromptText()}
 `;
 
 // ============================================
