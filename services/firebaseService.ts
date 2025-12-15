@@ -15,7 +15,7 @@ const firebaseConfig = {
 
 // Initialize Firebase (Singleton pattern)
 const app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
-const db = getFirestore(app);
+export const db = getFirestore(app);
 export const auth = getAuth(app);
 
 // Helper to remove undefined fields which Firestore doesn't support

@@ -11,6 +11,7 @@ import { ConfirmDialog } from './components/ConfirmDialog';
 import { LoadingScreen } from './components/Skeleton';
 import { ImageAnalysisModal } from './components/ImageAnalysisModal';
 import { VisualGuideModal } from './components/VisualGuideModal';
+import { WeekProgress } from './components/WeekProgress';
 import { generateDayContent, analyzeImage } from './services/geminiService';
 import { searchImages, StockImage, searchByCategory, PRESET_CATEGORIES, CategoryItem } from './services/imageService';
 import { ImageAnalysisResult } from './services/imageAnalysisService';
@@ -874,6 +875,12 @@ Teknik Açıklama: ${result.technicalDescription}
             <div className="lg:col-span-4 space-y-6">
                 <Stats stats={stats} />
                 
+                {/* Curriculum Progress */}
+                <WeekProgress 
+                  completedDays={days.filter(d => d.isSaved).map(d => d.dayNumber)}
+                  isExpanded={true}
+                />
+                
                 {/* Actions Panel */}
                 <div className="bg-zinc-900 p-6 rounded-2xl border border-zinc-800 shadow-lg space-y-4 sticky top-[30rem]">
                     <h3 className="text-xs font-bold text-zinc-500 uppercase tracking-widest mb-4">İşlemler</h3>
@@ -969,6 +976,7 @@ Teknik Açıklama: ${result.technicalDescription}
                             <DayCard 
                                 key={`day-${day.dayNumber}-${day.date}`}
                                 day={day}
+                                savedDays={days.filter(d => d.isSaved)}
                                 isLast={index === days.length - 1}
                                 onRegenerate={handleRegenerate}
                                 onSave={handleSave}

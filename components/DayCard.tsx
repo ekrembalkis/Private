@@ -4,9 +4,12 @@ import { createPortal } from 'react-dom';
 import { DayEntry, InternshipType } from '../types';
 import { RefreshCw, Camera, PenTool, Loader2, Calendar, ChevronRight, Save, CheckCircle2, CloudUpload, Trash2, Copy, Check, Pencil, X, ChevronDown, ImagePlus, Sparkles, Image as ImageIcon, Lightbulb } from 'lucide-react';
 import { PRODUCTION_TOPICS, MANAGEMENT_TOPICS } from '../constants';
+import { CurriculumBadge, CurriculumBadgeCompact } from './CurriculumBadge';
+import { getDayContextInfo } from '../services/geminiService';
 
 interface DayCardProps {
   day: DayEntry;
+  savedDays: DayEntry[];
   onRegenerate: (day: DayEntry) => void;
   onSave: (day: DayEntry) => Promise<void>;
   onDelete: (day: DayEntry) => Promise<void>;
@@ -19,6 +22,7 @@ interface DayCardProps {
 
 export const DayCard: React.FC<DayCardProps> = ({ 
   day, 
+  savedDays,
   onRegenerate, 
   onSave, 
   onDelete, 
@@ -39,6 +43,10 @@ export const DayCard: React.FC<DayCardProps> = ({
   const [editTopic, setEditTopic] = useState<string>(day.specificTopic);
   const [editCustomPrompt, setEditCustomPrompt] = useState<string>(day.customPrompt || '');
   const [isCustomTopic, setIsCustomTopic] = useState(false);
+  
+  // Curriculum State
+  const [showCurriculum, setShowCurriculum] = useState(false);
+  const curriculumInfo = getDayContextInfo(day.dayNumber, savedDays);
 
   // Sync state with props when day changes
   useEffect(() => {
@@ -181,6 +189,10 @@ export const DayCard: React.FC<DayCardProps> = ({
                     <p className={`text-xs font-bold uppercase tracking-wider ${isProduction ? 'text-amber-500/80' : 'text-blue-500/80'}`}>
                       {isProduction ? 'Üretim' : 'İşletme'}
                     </p>
+                  </div>
+                  {/* Curriculum Badge Compact */}
+                  <div className="hidden sm:block">
+                    <CurriculumBadgeCompact info={curriculumInfo} />
                   </div>
                 </div>
                 {isCompleted ? (
@@ -432,6 +444,13 @@ export const DayCard: React.FC<DayCardProps> = ({
               </div>
             )}
           </div>
+          
+          {/* Curriculum Badge - Expandable */}
+          <CurriculumBadge 
+            info={curriculumInfo}
+            isExpanded={showCurriculum}
+            onToggle={() => setShowCurriculum(!showCurriculum)}
+          />
           
           {day.isLoading && (
             <div className="absolute inset-0 bg-zinc-950/60 backdrop-blur-[2px] flex items-center justify-center z-20">
