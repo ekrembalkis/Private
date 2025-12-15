@@ -17,7 +17,7 @@ export interface StockImage {
 
 // SerpAPI Key - Environment'tan al
 const getSerpApiKey = (): string => {
-  return import.meta.env.VITE_SERPAPI_KEY || '';
+  return process.env.SERPAPI_KEY || '';
 };
 
 // Domain filtreleme
@@ -347,8 +347,8 @@ const searchGoogleImages = async (
   count: number = 10,
   imageType: string = 'autocad'
 ): Promise<StockImage[]> => {
-  const apiKey = import.meta.env.VITE_GOOGLE_SEARCH_API_KEY;
-  const cseId = import.meta.env.VITE_GOOGLE_CSE_ID;
+  const apiKey = process.env.GOOGLE_SEARCH_API_KEY;
+  const cseId = process.env.GOOGLE_CSE_ID;
 
   if (!apiKey || !cseId) {
     console.log("[ImageService] Google Search API credentials missing, using Wikimedia");

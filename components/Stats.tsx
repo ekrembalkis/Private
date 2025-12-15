@@ -13,7 +13,7 @@ export const Stats: React.FC<StatsProps> = ({ stats }) => {
   const strokeDashoffset = circumference - (progress / 100) * circumference;
 
   return (
-    <div className="space-y-6 sticky top-24">
+    <div className="space-y-6">
       {/* Student ID Card */}
       <div className="bg-zinc-900 rounded-2xl shadow-lg border border-zinc-800 overflow-hidden relative group">
          {/* Tech pattern overlay */}

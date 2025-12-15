@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { generateDayList } from './utils/dateUtils';
 import { DayEntry, InternshipType } from './types';
@@ -872,7 +871,7 @@ Teknik Açıklama: ${result.technicalDescription}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12">
             
             {/* Left Sidebar */}
-            <div className="lg:col-span-4 space-y-6">
+            <div className="lg:col-span-4 space-y-6 sticky top-24 h-fit">
                 <Stats stats={stats} />
                 
                 {/* Curriculum Progress */}
@@ -882,7 +881,7 @@ Teknik Açıklama: ${result.technicalDescription}
                 />
                 
                 {/* Actions Panel */}
-                <div className="bg-zinc-900 p-6 rounded-2xl border border-zinc-800 shadow-lg space-y-4 sticky top-[30rem]">
+                <div className="bg-zinc-900 p-6 rounded-2xl border border-zinc-800 shadow-lg space-y-4">
                     <h3 className="text-xs font-bold text-zinc-500 uppercase tracking-widest mb-4">İşlemler</h3>
                     
                     <button 

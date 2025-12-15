@@ -7,10 +7,11 @@ export default defineConfig(({ mode }) => {
 
   return {
     plugins: [react()],
-  define: {
+    define: {
       'process.env.API_KEY': JSON.stringify(env.API_KEY || env.VITE_API_KEY || env.GEMINI_API_KEY || env.VITE_GEMINI_API_KEY),
       'process.env.GOOGLE_SEARCH_API_KEY': JSON.stringify(env.GOOGLE_SEARCH_API_KEY || env.VITE_GOOGLE_SEARCH_API_KEY),
-      'process.env.GOOGLE_CSE_ID': JSON.stringify(env.GOOGLE_CSE_ID || env.VITE_GOOGLE_CSE_ID)
+      'process.env.GOOGLE_CSE_ID': JSON.stringify(env.GOOGLE_CSE_ID || env.VITE_GOOGLE_CSE_ID),
+      'process.env.SERPAPI_KEY': JSON.stringify(env.SERPAPI_KEY || env.VITE_SERPAPI_KEY)
     },
     build: {
       outDir: 'dist',

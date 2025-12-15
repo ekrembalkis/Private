@@ -8,7 +8,8 @@ import { auth, db } from './firebaseService';
 import { 
   LearningProgress, 
   GenerationContext,
-  SkillLevel 
+  SkillLevel,
+  CurriculumDay
 } from '../curriculumTypes';
 import { DayEntry } from '../types';
 import {
@@ -17,8 +18,7 @@ import {
   getWeekTheme,
   getAccumulatedSkills,
   getAccumulatedTools,
-  calculateSkillLevel,
-  CurriculumDay
+  calculateSkillLevel
 } from '../curriculum';
 
 // ============================================
