@@ -13,11 +13,12 @@ import { VisualGuideModal } from './components/VisualGuideModal';
 import { WeekProgress } from './components/WeekProgress';
 import { generateDayContent, analyzeImage } from './services/geminiService';
 import { searchImages, StockImage, searchByCategory, PRESET_CATEGORIES, CategoryItem } from './services/imageService';
+import { generateImageSearchQuery } from './services/semanticQueryService';
 import { ImageAnalysisResult } from './services/imageAnalysisService';
 import { saveDayToFirestore, loadAllDaysFromFirestore, deleteDayFromFirestore, savePlanToFirestore, loadPlanFromFirestore, resetFirestoreData } from './services/firebaseService';
 import { onAuthChange, logOut } from './services/authService';
 import { User } from 'firebase/auth';
-import { Wand2, Download, AlertTriangle, Terminal, FileText, FileType, ChevronDown, CheckCircle2, RotateCcw, Trash2, X, Loader2, LogOut, User as UserIcon, Info } from 'lucide-react';
+import { Wand2, Download, AlertTriangle, Terminal, FileText, FileType, ChevronDown, CheckCircle2, RotateCcw, Trash2, X, Loader2, LogOut, User as UserIcon, Info, Sparkles, Image as ImageIcon, RefreshCw } from 'lucide-react';
 import { STUDENT_INFO, COMPANY_INFO } from './constants';
 import { Document, Packer, Paragraph, TextRun, HeadingLevel, AlignmentType, ImageRun } from 'docx';
 import { pdf } from '@react-pdf/renderer';
@@ -34,6 +35,13 @@ const App: React.FC = () => {
   const [showImagePicker, setShowImagePicker] = useState(false);
   const [imageSearchResults, setImageSearchResults] = useState<StockImage[]>([]);
   const [imagePickerDay, setImagePickerDay] = useState<DayEntry | null>(null);
+  
+  // Quick Search States (Otomatik Görsel)
+  const [showQuickSearch, setShowQuickSearch] = useState(false);
+  const [quickSearchResults, setQuickSearchResults] = useState<StockImage[]>([]);
+  const [quickSearchDay, setQuickSearchDay] = useState<DayEntry | null>(null);
+  const [quickSearchQuery, setQuickSearchQuery] = useState<string>('');
+  const [isQuickSearching, setIsQuickSearching] = useState(false);
   const [isSearchingImages, setIsSearchingImages] = useState(false);
   const [selectedImageType, setSelectedImageType] = useState<string>('autocad');
   const [selectedCategoryGroup, setSelectedCategoryGroup] = useState<string | null>(null);
@@ -488,47 +496,74 @@ Teknik Açıklama: ${result.technicalDescription}
   };
 
   // Yeni: Konuya göre otomatik görsel bulma
+  // Otomatik görsel arama - Semantic Query ile
   const handleQuickImageSearch = async (day: DayEntry) => {
+    setQuickSearchDay(day);
+    setShowQuickSearch(true);
+    setIsQuickSearching(true);
+    setQuickSearchResults([]);
+    setQuickSearchQuery('');
+    
     try {
-      // Konuya göre görsel ara (saha tipi varsayılan)
-      const images = await searchImages(day.specificTopic, 15, 'saha');
+      // Semantic query ile İngilizce arama sorgusu oluştur
+      console.log('[QuickSearch] Topic:', day.specificTopic);
+      const englishQuery = await generateImageSearchQuery(day.specificTopic);
+      console.log('[QuickSearch] Semantic Query:', englishQuery);
+      setQuickSearchQuery(englishQuery);
       
-      if (images.length > 0) {
-        // İlk görseli seç ve ata
-        const imageUrl = images[0].url;
-        
-        // Görseli analiz et
-        let imageAnalysis = "";
-        try {
-          imageAnalysis = await analyzeImage(imageUrl);
-        } catch (err) {
-          console.error("Analiz hatası", err);
-        }
-        
-        const finalDays = days.map(d => {
-          if (d.dayNumber === day.dayNumber) {
-            const updatedDay = { 
-              ...d, 
-              imageUrl: imageUrl,
-              imageAnalysis: imageAnalysis,
-              imageSource: 'stock' as const,
-            };
-            if (d.isSaved) {
-              saveDayToFirestore(updatedDay);
-            }
-            return updatedDay;
-          }
-          return d;
-        });
-        setDays(finalDays);
-        success('Görsel Bulundu', 'Konuya uygun görsel otomatik seçildi');
-      } else {
-        toastError('Görsel Bulunamadı', 'Bu konu için uygun görsel bulunamadı. Manuel arama yapın.');
+      // Görsel ara
+      const images = await searchImages(englishQuery, 20, 'saha');
+      console.log('[QuickSearch] Found:', images.length, 'images');
+      
+      setQuickSearchResults(images);
+      
+      if (images.length === 0) {
+        toastError('Görsel Bulunamadı', 'Bu konu için uygun görsel bulunamadı.');
       }
     } catch (err) {
       console.error("Quick Image Search Error", err);
       toastError("Arama Hatası", "Görseller aranırken bir sorun oluştu.");
+    } finally {
+      setIsQuickSearching(false);
     }
+  };
+
+  // Quick Search'ten görsel seçme
+  const handleQuickSearchSelect = async (imageUrl: string) => {
+    if (!quickSearchDay) return;
+    
+    // Görseli analiz et
+    let imageAnalysis = "";
+    try {
+      imageAnalysis = await analyzeImage(imageUrl);
+    } catch (err) {
+      console.error("Analiz hatası", err);
+    }
+    
+    const finalDays = days.map(d => {
+      if (d.dayNumber === quickSearchDay.dayNumber) {
+        const updatedDay = { 
+          ...d, 
+          imageUrl: imageUrl,
+          imageAnalysis: imageAnalysis,
+          imageSource: 'stock' as const,
+        };
+        if (d.isSaved) {
+          saveDayToFirestore(updatedDay);
+        }
+        return updatedDay;
+      }
+      return d;
+    });
+    setDays(finalDays);
+    
+    // Paneli kapat
+    setShowQuickSearch(false);
+    setQuickSearchDay(null);
+    setQuickSearchResults([]);
+    setQuickSearchQuery('');
+    
+    success('Görsel Seçildi', 'Görsel başarıyla eklendi');
   };
 
   const handleSave = async (day: DayEntry) => {
@@ -1044,6 +1079,114 @@ Teknik Açıklama: ${result.technicalDescription}
         </div>
       </main>
 
+      {/* Quick Search Modal - Semantic Query ile Otomatik Görsel */}
+      {showQuickSearch && (
+        <div className="fixed inset-0 z-50 bg-black/95 backdrop-blur-md flex items-center justify-center p-4 animate-fade-in">
+          <div className="bg-zinc-900 border border-zinc-800 rounded-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col">
+            <div className="p-4 border-b border-zinc-800 flex items-center justify-between">
+              <div>
+                <h3 className="text-lg font-bold text-white flex items-center gap-2">
+                  <Sparkles className="w-5 h-5 text-emerald-500" />
+                  Otomatik Görsel Arama
+                </h3>
+                <p className="text-sm text-zinc-500">Gün {quickSearchDay?.dayNumber}: {quickSearchDay?.specificTopic}</p>
+                {quickSearchQuery && (
+                  <p className="text-xs text-emerald-400 mt-1 flex items-center gap-1">
+                    <span>🔍</span> Arama: "{quickSearchQuery}"
+                  </p>
+                )}
+              </div>
+              <button 
+                onClick={() => { setShowQuickSearch(false); setQuickSearchDay(null); setQuickSearchResults([]); setQuickSearchQuery(''); }}
+                className="p-2 text-zinc-400 hover:text-white hover:bg-zinc-800 rounded-lg transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            
+            <div className="flex-1 overflow-y-auto p-4">
+              {isQuickSearching ? (
+                <div className="flex flex-col items-center justify-center py-16 gap-4">
+                  <div className="relative">
+                    <div className="w-16 h-16 border-4 border-emerald-500/20 rounded-full animate-pulse"></div>
+                    <Loader2 className="w-8 h-8 text-emerald-500 animate-spin absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />
+                  </div>
+                  <p className="text-zinc-400 text-sm">AI ile arama sorgusu oluşturuluyor...</p>
+                  <p className="text-zinc-500 text-xs">Semantic query ile en uygun görseller aranıyor</p>
+                </div>
+              ) : quickSearchResults.length > 0 ? (
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <p className="text-sm text-zinc-400">
+                      <span className="text-emerald-400 font-bold">{quickSearchResults.length}</span> görsel bulundu
+                    </p>
+                    <button
+                      onClick={() => handleQuickImageSearch(quickSearchDay!)}
+                      className="text-xs text-zinc-500 hover:text-emerald-400 flex items-center gap-1"
+                    >
+                      <RefreshCw className="w-3 h-3" /> Yeniden Ara
+                    </button>
+                  </div>
+                  
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+                    {quickSearchResults.map((img, index) => (
+                      <div 
+                        key={index}
+                        onClick={() => handleQuickSearchSelect(img.url)}
+                        className="group relative aspect-[4/3] rounded-xl overflow-hidden cursor-pointer border-2 border-transparent hover:border-emerald-500 transition-all hover:scale-[1.02] hover:shadow-lg hover:shadow-emerald-900/20"
+                      >
+                        <img 
+                          src={img.url} 
+                          alt={img.alt || 'Görsel'} 
+                          className="w-full h-full object-cover"
+                          loading="lazy"
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-2">
+                          <span className="text-white text-xs font-medium">Seç</span>
+                        </div>
+                        {index === 0 && (
+                          <div className="absolute top-2 left-2 px-2 py-1 bg-emerald-500 text-white text-[10px] font-bold rounded-full">
+                            ÖNERİLEN
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ) : (
+                <div className="flex flex-col items-center justify-center py-16 gap-4">
+                  <div className="w-16 h-16 bg-zinc-800 rounded-full flex items-center justify-center">
+                    <ImageIcon className="w-8 h-8 text-zinc-600" />
+                  </div>
+                  <p className="text-zinc-400 text-sm">Görsel bulunamadı</p>
+                  <button
+                    onClick={() => { setShowQuickSearch(false); handleOpenImagePicker(quickSearchDay!); }}
+                    className="px-4 py-2 bg-purple-600 hover:bg-purple-500 text-white rounded-lg text-xs font-bold"
+                  >
+                    Manuel Arama Yap
+                  </button>
+                </div>
+              )}
+            </div>
+            
+            <div className="p-4 border-t border-zinc-800 flex justify-between items-center">
+              <button
+                onClick={() => { setShowQuickSearch(false); handleOpenImagePicker(quickSearchDay!); }}
+                className="text-sm text-zinc-400 hover:text-white flex items-center gap-2"
+              >
+                <ImageIcon className="w-4 h-4" />
+                Manuel Seçime Geç
+              </button>
+              <button 
+                onClick={() => { setShowQuickSearch(false); setQuickSearchDay(null); setQuickSearchResults([]); }}
+                className="px-4 py-2 text-sm font-medium text-zinc-400 hover:text-white hover:bg-zinc-800 rounded-lg transition-colors"
+              >
+                Kapat
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
 {/* Image Picker Modal */}
       {showImagePicker && (
