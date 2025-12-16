@@ -13,6 +13,39 @@ const getAiClient = () => {
   return new GoogleGenAI({ apiKey });
 };
 
+// Retry helper
+const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
+const withRetry = async <T>(
+  fn: () => Promise<T>,
+  maxRetries: number = 3,
+  baseDelay: number = 1500
+): Promise<T> => {
+  let lastError: Error | null = null;
+  
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      return await fn();
+    } catch (error: any) {
+      lastError = error;
+      const errorMessage = error?.message || String(error);
+      const isRetryable = 
+        errorMessage.includes('503') || 
+        errorMessage.includes('overloaded') ||
+        errorMessage.includes('UNAVAILABLE');
+      
+      if (isRetryable && attempt < maxRetries) {
+        const delay = baseDelay * attempt;
+        console.log(`[SemanticQuery Retry] Attempt ${attempt}/${maxRetries}. Waiting ${delay}ms...`);
+        await sleep(delay);
+        continue;
+      }
+      throw error;
+    }
+  }
+  throw lastError;
+};
+
 /**
  * Türkçe staj konusunu İngilizce görsel arama sorgusuna çevirir
  * Keyword map yerine AI ile semantic anlama kullanır
@@ -46,13 +79,15 @@ TURKISH TOPIC: "${turkishTopic}"
 ENGLISH SEARCH QUERY:`;
 
   try {
-    const response = await ai.models.generateContent({
-      model: "gemini-2.0-flash",
-      contents: [{ role: "user", parts: [{ text: prompt }] }],
-      config: {
-        temperature: 0.3,
-        maxOutputTokens: 50,
-      }
+    const response = await withRetry(async () => {
+      return await ai.models.generateContent({
+        model: "gemini-2.0-flash",
+        contents: [{ role: "user", parts: [{ text: prompt }] }],
+        config: {
+          temperature: 0.3,
+          maxOutputTokens: 50,
+        }
+      });
     });
     
     const result = response.text?.trim() || '';

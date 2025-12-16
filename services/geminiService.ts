@@ -25,6 +25,56 @@ const getAiClient = () => {
   return new GoogleGenAI({ apiKey });
 };
 
+// ============================================
+// RETRY MECHANISM
+// ============================================
+
+const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
+/**
+ * Retry wrapper for Gemini API calls
+ * Handles 503 (overloaded) and other transient errors
+ */
+const withRetry = async <T>(
+  fn: () => Promise<T>,
+  maxRetries: number = 3,
+  baseDelay: number = 2000
+): Promise<T> => {
+  let lastError: Error | null = null;
+  
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      return await fn();
+    } catch (error: any) {
+      lastError = error;
+      const errorMessage = error?.message || String(error);
+      const statusCode = error?.status || (errorMessage.includes('503') ? 503 : 0);
+      
+      // Retry on 503 (overloaded), 429 (rate limit), or network errors
+      const isRetryable = 
+        statusCode === 503 || 
+        statusCode === 429 || 
+        errorMessage.includes('overloaded') ||
+        errorMessage.includes('UNAVAILABLE') ||
+        errorMessage.includes('rate limit') ||
+        errorMessage.includes('network');
+      
+      if (isRetryable && attempt < maxRetries) {
+        const delay = baseDelay * Math.pow(2, attempt - 1); // Exponential backoff
+        console.log(`[Retry] Attempt ${attempt}/${maxRetries} failed. Retrying in ${delay}ms...`);
+        console.log(`[Retry] Error: ${errorMessage.substring(0, 100)}`);
+        await sleep(delay);
+        continue;
+      }
+      
+      // Not retryable or max retries reached
+      throw error;
+    }
+  }
+  
+  throw lastError;
+};
+
 const fetchImageAsBase64 = async (url: string): Promise<string> => {
   const response = await fetch(url);
   const blob = await response.blob();
@@ -43,17 +93,19 @@ export const analyzeImage = async (imageUrl: string): Promise<string> => {
   const ai = getAiClient();
   
   try {
-    const response = await ai.models.generateContent({
-      model: "gemini-2.5-flash",
-      contents: [
-        {
-          role: "user",
-          parts: [
-            { text: "Bu görseli analiz et. Bu bir elektrik mühendisliği stajı bağlamında ne gösteriyor? Kısaca açıkla: Bu bir proje çizimi mi, teknik şema mı, saha fotoğrafı mı, eğitim materyali mi? Görselde tam olarak ne var? 2-3 cümle ile açıkla." },
-            { inlineData: { mimeType: "image/jpeg", data: await fetchImageAsBase64(imageUrl) } }
-          ]
-        }
-      ]
+    const response = await withRetry(async () => {
+      return await ai.models.generateContent({
+        model: "gemini-2.0-flash",
+        contents: [
+          {
+            role: "user",
+            parts: [
+              { text: "Bu görseli analiz et. Bu bir elektrik mühendisliği stajı bağlamında ne gösteriyor? Kısaca açıkla: Bu bir proje çizimi mi, teknik şema mı, saha fotoğrafı mı, eğitim materyali mi? Görselde tam olarak ne var? 2-3 cümle ile açıkla." },
+              { inlineData: { mimeType: "image/jpeg", data: await fetchImageAsBase64(imageUrl) } }
+            ]
+          }
+        ]
+      });
     });
     
     return response.text || "Görsel analiz edilemedi.";
@@ -316,12 +368,14 @@ ${day.hasVisual ? '[GÖRSEL AÇIKLAMASI: Görselin ne olduğunu anlatan kısa no
 `;
 
   try {
-    const response = await ai.models.generateContent({
-      model: "gemini-2.5-flash",
-      config: {
-        systemInstruction: ENHANCED_SYSTEM_PROMPT,
-      },
-      contents: userPrompt
+    const response = await withRetry(async () => {
+      return await ai.models.generateContent({
+        model: "gemini-2.0-flash",
+        config: {
+          systemInstruction: ENHANCED_SYSTEM_PROMPT,
+        },
+        contents: userPrompt
+      });
     });
 
     const rawText = response.text || "İçerik oluşturulamadı.";
@@ -354,8 +408,13 @@ ${day.hasVisual ? '[GÖRSEL AÇIKLAMASI: Görselin ne olduğunu anlatan kısa no
       workTitle: workTitle
     };
 
-  } catch (error) {
+  } catch (error: any) {
     console.error("Error generating content:", error);
+    // Daha açıklayıcı hata mesajı
+    const errorMessage = error?.message || String(error);
+    if (errorMessage.includes('503') || errorMessage.includes('overloaded')) {
+      throw new Error('Gemini API şu anda meşgul. Lütfen birkaç saniye bekleyip tekrar deneyin.');
+    }
     throw error;
   }
 };
@@ -515,13 +574,15 @@ KURALLAR:
 Sadece JSON döndür, başka bir şey yazma.`;
 
   try {
-    const response = await ai.models.generateContent({
-      model: "gemini-2.0-flash",
-      contents: [{ role: "user", parts: [{ text: prompt }] }],
-      config: {
-        temperature: 0.7,
-        maxOutputTokens: 500,
-      }
+    const response = await withRetry(async () => {
+      return await ai.models.generateContent({
+        model: "gemini-2.0-flash",
+        contents: [{ role: "user", parts: [{ text: prompt }] }],
+        config: {
+          temperature: 0.7,
+          maxOutputTokens: 500,
+        }
+      });
     });
     
     const text = response.text?.trim() || '';
