@@ -487,6 +487,50 @@ Teknik Açıklama: ${result.technicalDescription}
     setSelectedCategoryItem(null);
   };
 
+  // Yeni: Konuya göre otomatik görsel bulma
+  const handleQuickImageSearch = async (day: DayEntry) => {
+    try {
+      // Konuya göre görsel ara (saha tipi varsayılan)
+      const images = await searchImages(day.specificTopic, 15, 'saha');
+      
+      if (images.length > 0) {
+        // İlk görseli seç ve ata
+        const imageUrl = images[0].url;
+        
+        // Görseli analiz et
+        let imageAnalysis = "";
+        try {
+          imageAnalysis = await analyzeImage(imageUrl);
+        } catch (err) {
+          console.error("Analiz hatası", err);
+        }
+        
+        const finalDays = days.map(d => {
+          if (d.dayNumber === day.dayNumber) {
+            const updatedDay = { 
+              ...d, 
+              imageUrl: imageUrl,
+              imageAnalysis: imageAnalysis,
+              imageSource: 'stock' as const,
+            };
+            if (d.isSaved) {
+              saveDayToFirestore(updatedDay);
+            }
+            return updatedDay;
+          }
+          return d;
+        });
+        setDays(finalDays);
+        success('Görsel Bulundu', 'Konuya uygun görsel otomatik seçildi');
+      } else {
+        toastError('Görsel Bulunamadı', 'Bu konu için uygun görsel bulunamadı. Manuel arama yapın.');
+      }
+    } catch (err) {
+      console.error("Quick Image Search Error", err);
+      toastError("Arama Hatası", "Görseller aranırken bir sorun oluştu.");
+    }
+  };
+
   const handleSave = async (day: DayEntry) => {
     const result = await saveDayToFirestore(day);
     if (result) {
@@ -982,6 +1026,7 @@ Teknik Açıklama: ${result.technicalDescription}
                                 onDelete={handleDelete}
                                 onUpdatePlan={handleUpdatePlan}
                                 onSearchImage={handleOpenImagePicker}
+                                onQuickImageSearch={handleQuickImageSearch}
                                 onImageClick={setSelectedImage}
                                 onOpenVisualGuide={handleOpenVisualGuide}
                             />

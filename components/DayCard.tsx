@@ -15,6 +15,7 @@ interface DayCardProps {
   onDelete: (day: DayEntry) => Promise<void>;
   onUpdatePlan: (day: DayEntry, newType: InternshipType, newTopic: string, customPrompt: string) => Promise<void>;
   onSearchImage: (day: DayEntry) => Promise<void>;
+  onQuickImageSearch: (day: DayEntry) => Promise<void>;
   onImageClick: (imageUrl: string) => void;
   onOpenVisualGuide: (day: DayEntry) => void;
   isLast: boolean;
@@ -28,11 +29,13 @@ export const DayCard: React.FC<DayCardProps> = ({
   onDelete, 
   onUpdatePlan, 
   onSearchImage,
+  onQuickImageSearch,
   onImageClick,
   onOpenVisualGuide,
   isLast 
 }) => {
   const [isSaving, setIsSaving] = useState(false);
+  const [isQuickSearching, setIsQuickSearching] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [isCopied, setIsCopied] = useState(false);
@@ -83,6 +86,12 @@ export const DayCard: React.FC<DayCardProps> = ({
     setIsSaving(true);
     await onSave(day);
     setIsSaving(false);
+  };
+
+  const handleQuickSearch = async () => {
+    setIsQuickSearching(true);
+    await onQuickImageSearch(day);
+    setIsQuickSearching(false);
   };
 
   const handleDeleteClick = () => {
@@ -438,14 +447,25 @@ export const DayCard: React.FC<DayCardProps> = ({
                     <p className="text-xs text-purple-400 font-medium bg-purple-500/10 px-3 py-1.5 rounded-full border border-purple-500/20 mb-1">
                       Bu gün için önce görsel seçmelisiniz
                     </p>
-                    <button 
-                      onClick={() => onSearchImage(day)}
-                      disabled={day.isImageLoading}
-                      className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-purple-600 text-white rounded-xl text-sm font-bold hover:bg-purple-500 transition-all shadow-lg shadow-purple-900/20"
-                    >
-                      {day.isImageLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <ImageIcon className="w-4 h-4" />}
-                      Görsel Ara ve Seç
-                    </button>
+                    <div className="flex gap-2 w-full">
+                      <button 
+                        onClick={handleQuickSearch}
+                        disabled={day.isImageLoading || isQuickSearching}
+                        className="flex-1 flex items-center justify-center gap-2 px-3 py-3 bg-emerald-600 text-white rounded-xl text-xs font-bold hover:bg-emerald-500 transition-all shadow-lg shadow-emerald-900/20"
+                        title="Konuya göre otomatik görsel bul"
+                      >
+                        {isQuickSearching ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
+                        Otomatik Bul
+                      </button>
+                      <button 
+                        onClick={() => onSearchImage(day)}
+                        disabled={day.isImageLoading}
+                        className="flex-1 flex items-center justify-center gap-2 px-3 py-3 bg-purple-600 text-white rounded-xl text-xs font-bold hover:bg-purple-500 transition-all shadow-lg shadow-purple-900/20"
+                      >
+                        {day.isImageLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <ImageIcon className="w-4 h-4" />}
+                        Manuel Seç
+                      </button>
+                    </div>
                     <button 
                        disabled
                        className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-zinc-800 text-zinc-500 rounded-xl text-sm font-semibold cursor-not-allowed border border-zinc-700"
