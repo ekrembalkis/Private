@@ -104,31 +104,109 @@ const KEYWORD_MAP: Record<string, string> = {
     'şema': 'schematic diagram',
     'proje': 'project',
     'aydınlat': 'lighting',
-    'topraklama': 'grounding',
-    'sigorta': 'circuit breaker',
+    'topraklama': 'grounding earthing',
+    'sigorta': 'circuit breaker fuse',
     'trafo': 'transformer',
     'motor': 'motor',
-    'kompanzasyon': 'power factor',
+    'kompanzasyon': 'power factor correction',
     'ölçüm': 'measurement',
     'bakım': 'maintenance',
-    'arıza': 'fault',
-    'tesisat': 'wiring',
+    'arıza': 'fault troubleshooting',
+    'tesisat': 'wiring installation',
     'dağıtım': 'distribution',
     'kumanda': 'control',
     'otomasyon': 'automation',
-    'inverter': 'inverter',
+    'inverter': 'inverter VFD',
     'kondansatör': 'capacitor',
     'kontaktör': 'contactor',
     'röle': 'relay',
-    'şalter': 'switch',
+    'şalter': 'switch breaker',
     'bara': 'busbar',
-    'klemens': 'terminal',
+    'klemens': 'terminal block',
     'pabuç': 'cable lug',
     'multimetre': 'multimeter',
     'pens': 'clamp meter',
     'güç': 'power',
     'gerilim': 'voltage',
     'akım': 'current',
+    'faz': 'phase',
+    'nötr': 'neutral',
+    
+    // Fire and Safety Systems
+    'yangın': 'fire',
+    'algılama': 'detection',
+    'dedektör': 'detector',
+    'duman': 'smoke',
+    'sensör': 'sensor',
+    'alarm': 'alarm',
+    'sprinkler': 'sprinkler',
+    'söndürme': 'suppression extinguishing',
+    'acil': 'emergency',
+    'güvenlik': 'security safety',
+    'kamera': 'camera CCTV',
+    
+    // System terms
+    'sistem': 'system',
+    'sistemi': 'system',
+    'sistemleri': 'systems',
+    'test': 'test testing',
+    'işlem': 'process procedure',
+    'kontrol': 'control check',
+    'devreye': 'commissioning',
+    'alma': 'commissioning',
+    
+    // UPS and Power
+    'ups': 'UPS uninterruptible power supply',
+    'kesintisiz': 'uninterruptible',
+    'jeneratör': 'generator',
+    'akü': 'battery',
+    'batarya': 'battery',
+    'şarj': 'charging',
+    'redresör': 'rectifier',
+    
+    // Protection
+    'koruma': 'protection',
+    'kaçak': 'leakage residual',
+    'aşırı': 'over',
+    'kısa': 'short',
+    'toprak': 'ground earth',
+    'yıldırım': 'lightning surge',
+    'parafudr': 'surge arrester SPD',
+    
+    // Measurement
+    'megger': 'insulation tester megger',
+    'lux': 'lux light meter',
+    'termal': 'thermal',
+    'termografi': 'thermography',
+    
+    // PLC and Automation
+    'plc': 'PLC programmable logic controller',
+    'scada': 'SCADA',
+    'hmi': 'HMI',
+    'io': 'I/O input output',
+    'modbus': 'Modbus',
+    'profibus': 'Profibus',
+    'ethernet': 'Ethernet',
+    'haberleşme': 'communication',
+    'protokol': 'protocol',
+    
+    // Renewable Energy
+    'güneş': 'solar photovoltaic',
+    'panel': 'panel',
+    'fotovoltaik': 'photovoltaic PV',
+    'rüzgar': 'wind',
+    'enerji': 'energy power',
+    
+    // Technical Tables
+    'tablo': 'table chart',
+    'hesap': 'calculation',
+    'boyutlandırma': 'sizing',
+    'seçim': 'selection',
+    'kapasite': 'capacity',
+    'verimlilik': 'efficiency',
+    'harmonik': 'harmonic',
+    'cos': 'power factor cos phi',
+    'kvar': 'kVAr reactive',
     
     // Buildings
     'villa': 'residential house',
@@ -140,15 +218,26 @@ const KEYWORD_MAP: Record<string, string> = {
     'apartman': 'apartment',
     'daire': 'apartment',
     'kat': 'floor storey',
+    'mağaza': 'store shop',
+    'depo': 'warehouse storage',
     
     // Design terms
     'autocad': 'AutoCAD electrical',
+    'dialux': 'DIALux lighting',
     'çizim': 'drawing',
-    'plan': 'floor plan',
-    'kesit': 'section',
+    'plan': 'floor plan layout',
+    'kesit': 'cross section',
     'detay': 'detail',
     'tasarım': 'design',
-    'hesap': 'calculation',
+    'revize': 'revision',
+    'asbuilt': 'as-built',
+    
+    // Cable types
+    'nym': 'NYM cable',
+    'nyy': 'NYY cable',
+    'nya': 'NYA wire',
+    'nhxmh': 'NHXMH halogen free',
+    'örgülü': 'braided shielded',
     
     // Numbers
     'iki': 'two',
@@ -156,11 +245,18 @@ const KEYWORD_MAP: Record<string, string> = {
     'dört': 'four',
     'beş': 'five',
     'tek': 'single',
-    'çok': 'multi'
+    'çok': 'multi',
+    'birinci': 'first',
+    'ikinci': 'second'
 };
 
-// Turkish words to skip (fillers, connectors)
-const SKIP_WORDS = new Set(['de', 'da', 've', 'ile', 'için', 'bir', 'bu', 'şu', 'o', 'gibi', 'kadar', 'olan', 'olarak', 'üzerinde', 'hakkında', 'katlı']);
+// Turkish words to skip (fillers, connectors, suffixes)
+const SKIP_WORDS = new Set([
+  'de', 'da', 've', 'ile', 'için', 'bir', 'bu', 'şu', 'o', 'gibi', 'kadar', 
+  'olan', 'olarak', 'üzerinde', 'hakkında', 'katlı', 'den', 'dan', 'ten', 'tan',
+  'nin', 'nın', 'nun', 'nün', 'ın', 'in', 'un', 'ün', 'ya', 'ye', 'na', 'ne',
+  'li', 'lı', 'lu', 'lü', 'siz', 'sız', 'deki', 'daki', 'teki', 'taki'
+]);
 
 /**
  * Translate Turkish topic to English for better search
