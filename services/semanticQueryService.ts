@@ -53,26 +53,43 @@ const withRetry = async <T>(
 export const generateImageSearchQuery = async (turkishTopic: string): Promise<string> => {
   const ai = getAiClient();
   
-  const prompt = `You are an expert at converting Turkish electrical engineering internship topics into optimal English image search queries.
+  const prompt = `You are an expert at converting Turkish electrical engineering internship topics into optimal English image search queries for finding relevant technical images.
 
-TASK: Convert the following Turkish topic into a SHORT, EFFECTIVE English image search query (3-6 words max).
+TASK: Convert the following Turkish topic into a SHORT, EFFECTIVE English image search query (3-7 words max).
 
-RULES:
-1. Focus on the VISUAL aspect - what would the image show?
-2. Use common English technical terms
-3. Keep it SHORT (3-6 words) for better search results
-4. Add "electrical" or relevant context word if needed
-5. NO Turkish words in output
-6. NO explanations, just the search query
+CRITICAL RULES:
+1. UNDERSTAND the topic semantically - don't just translate words
+2. Focus on what KIND of image would be useful (diagram, table, photo, schematic)
+3. Use STANDARD English technical terms that will return good image results
+4. If topic mentions "tablo/tabloları" (tables/charts), search for "table" or "chart" or "reference"
+5. If topic mentions "inceleme/analiz" (examination), focus on the SUBJECT being examined
+6. NO Turkish words in output - translate everything
+7. Keep it concise but specific enough to find relevant images
 
 EXAMPLES:
-"Yangın algılama sistemi dedektör montajı ve test işlemleri" → "fire detector installation testing"
-"AutoCAD'de iki katlı villa projesi aydınlatma planı çizimi" → "AutoCAD electrical lighting plan drawing"
+
+Tables & Charts:
+"Patlayıcı ortam (Ex) koruma sınıfları ve ATEX zone tabloları incelemesi" → "ATEX zone classification table Ex protection"
 "Trafo Dyn11 bağlantı grubu vektör diyagramı incelemesi" → "transformer Dyn11 vector group diagram"
-"Kompanzasyon sistemi için cos φ tabloları ile kVAr hesabı" → "power factor correction capacitor bank"
-"Kesintisiz güç kaynağı (UPS) akü grubu değişimi ve bakımı" → "UPS battery replacement maintenance"
+"Kompanzasyon sistemi için cos φ tabloları ile kVAr hesabı" → "power factor correction kVAr calculation table"
+"Akım trafosu (CT) oran ve doğruluk sınıfı seçim tablosu" → "current transformer CT ratio accuracy class table"
+"Kablo kesit seçim tabloları ve akım taşıma kapasitesi" → "cable cross section selection table ampacity"
+"Motor verimlilik sınıfları IE1 IE2 IE3 IE4 karşılaştırma" → "motor efficiency class IE1 IE2 IE3 IE4 comparison chart"
+"Sigorta eğrisi karakteristikleri B C D tipi" → "circuit breaker trip curve B C D characteristic"
+"IP koruma sınıfları tablosu" → "IP protection rating chart table"
+
+Diagrams & Schematics:
+"AutoCAD'de iki katlı villa projesi aydınlatma planı çizimi" → "AutoCAD residential electrical lighting plan"
+"Tek hat şeması üzerinden pano malzeme listesi" → "single line diagram electrical panel"
+"PLC ladder diyagram programlama" → "PLC ladder diagram programming"
+"Vaviyen aydınlatma devre şeması" → "two way light switch wiring diagram"
+
+Installation & Site:
+"Yangın algılama sistemi dedektör montajı ve test işlemleri" → "fire detector installation testing"
 "Pano içi kablolama ve ferüleşme eğitimi" → "electrical panel wiring ferrule crimping"
-"Şantiyede kablo tavası ve busbar sistemi montaj kontrolü" → "cable tray busbar installation site"
+"Şantiyede kablo tavası ve busbar sistemi montaj kontrolü" → "cable tray busbar installation"
+"Kesintisiz güç kaynağı (UPS) akü grubu değişimi ve bakımı" → "UPS battery bank replacement maintenance"
+"Topraklama direnci ölçümü ve değerlendirme" → "ground resistance testing measurement"
 
 TURKISH TOPIC: "${turkishTopic}"
 
@@ -84,8 +101,8 @@ ENGLISH SEARCH QUERY:`;
         model: "gemini-2.0-flash",
         contents: [{ role: "user", parts: [{ text: prompt }] }],
         config: {
-          temperature: 0.3,
-          maxOutputTokens: 50,
+          temperature: 0.2,
+          maxOutputTokens: 60,
         }
       });
     });

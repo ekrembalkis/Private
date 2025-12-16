@@ -5,6 +5,7 @@
  */
 
 import { searchImagesSerpAPI, buildTechnicalQuery, getFallbackQueries, translateToEnglish, SerpAPIImage } from './serpApiService';
+import { generateImageSearchQuery } from './semanticQueryService';
 import { getSearchConfig, SearchStrategy } from './searchTermsLibrary';
 
 export interface StockImage {
@@ -434,7 +435,7 @@ const searchGoogleImages = async (
 // ==========================================
 
 /**
- * Ana arama fonksiyonu - Önce SerpAPI, sonra Wikimedia, en son Google
+ * Ana arama fonksiyonu - Semantic Query + SerpAPI
  */
 export const searchImages = async (
   topic: string,
@@ -446,24 +447,42 @@ export const searchImages = async (
   console.log('Type:', imageType);
   console.log('Count:', count);
 
-  // Topic İngilizceye çevrilecek (buildTechnicalQuery içinde)
-  // Wikimedia ve Google için burada çeviriyoruz
-  const englishTopic = translateToEnglish(topic);
-  console.log('English Topic (for fallbacks):', englishTopic);
+  // Semantic Query ile İngilizce'ye çevir (Gemini AI)
+  let englishTopic: string;
+  try {
+    englishTopic = await generateImageSearchQuery(topic);
+    console.log('Semantic Query Result:', englishTopic);
+  } catch (error) {
+    console.warn('[ImageService] Semantic query failed, using keyword fallback');
+    englishTopic = translateToEnglish(topic);
+    console.log('Keyword Fallback Result:', englishTopic);
+  }
 
   let allResults: StockImage[] = [];
 
-  // 1. SerpAPI ile ara (PRİMER) - buildTechnicalQuery içinde çeviri yapılıyor
+  // 1. SerpAPI ile ara (PRİMER) - Semantic query sonucunu kullan
   const serpApiKey = getSerpApiKey();
   if (serpApiKey) {
-    console.log('Strategy 1: SerpAPI');
-    const serpResults = await searchImagesWithSerpAPI(
-      topic,  // Orijinal topic - buildTechnicalQuery çevirecek
-      count,
-      imageType as 'autocad' | 'saha' | 'tablo' | 'genel'
-    );
-    allResults = [...serpResults];
-    console.log(`SerpAPI returned ${serpResults.length} results`);
+    console.log('Strategy 1: SerpAPI with Semantic Query');
+    console.log('[ImageService] 🔍 SerpAPI Search:', englishTopic);
+    
+    // imageType'a göre ek context ekle
+    let searchQuery = englishTopic;
+    if (imageType === 'tablo' && !searchQuery.toLowerCase().includes('table') && !searchQuery.toLowerCase().includes('chart')) {
+      searchQuery += ' reference table chart';
+    } else if (imageType === 'autocad' && !searchQuery.toLowerCase().includes('drawing') && !searchQuery.toLowerCase().includes('diagram')) {
+      searchQuery += ' electrical diagram';
+    } else if (imageType === 'saha') {
+      searchQuery += ' installation site';
+    }
+    
+    try {
+      const serpResults = await searchImagesSerpAPI(searchQuery, count, imageType as 'autocad' | 'saha' | 'tablo' | 'genel');
+      allResults = [...serpResults];
+      console.log(`SerpAPI returned ${serpResults.length} results`);
+    } catch (error) {
+      console.error('SerpAPI search failed:', error);
+    }
   }
 
   // 2. Yetersizse Wikimedia Commons'dan tamamla
