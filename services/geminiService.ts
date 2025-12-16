@@ -523,7 +523,33 @@ export interface SmartPlanSuggestion {
 }
 
 /**
+ * İçeriği kısaltır ve özetler
+ */
+const truncateContent = (content: string, maxLength: number = 300): string => {
+  if (!content) return '';
+  
+  // İlk paragrafı veya ilk birkaç cümleyi al
+  const cleaned = content
+    .replace(/\n+/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+  
+  if (cleaned.length <= maxLength) return cleaned;
+  
+  // Son tam cümleye kadar kes
+  const truncated = cleaned.substring(0, maxLength);
+  const lastSentence = truncated.lastIndexOf('.');
+  
+  if (lastSentence > maxLength * 0.5) {
+    return truncated.substring(0, lastSentence + 1);
+  }
+  
+  return truncated + '...';
+};
+
+/**
  * Önceki günlere bakarak akıllı plan önerisi üretir
+ * İçerik özetleri dahil edilir
  */
 export const generateSmartPlanSuggestion = async (
   dayNumber: number,
@@ -532,12 +558,31 @@ export const generateSmartPlanSuggestion = async (
 ): Promise<SmartPlanSuggestion> => {
   const ai = getAiClient();
   
-  // Önceki günlerin özetini oluştur
-  const previousDaysSummary = previousDays
+  // Önceki günleri filtrele ve sırala
+  const relevantDays = previousDays
     .filter(d => d.dayNumber < dayNumber && d.specificTopic)
-    .sort((a, b) => a.dayNumber - b.dayNumber)
-    .map(d => `Gün ${d.dayNumber}: ${d.specificTopic}`)
-    .join('\n');
+    .sort((a, b) => a.dayNumber - b.dayNumber);
+  
+  // Son 5 günün detaylı özetini al (token limiti için)
+  const recentDays = relevantDays.slice(-5);
+  
+  // Detaylı özet oluştur (konu + içerik özeti)
+  const detailedSummary = recentDays.map(d => {
+    const contentSummary = d.content && d.isGenerated 
+      ? `\n   İçerik: ${truncateContent(d.content, 250)}`
+      : '';
+    const customPrompt = d.customPrompt 
+      ? `\n   Direktif: ${truncateContent(d.customPrompt, 100)}`
+      : '';
+    
+    return `Gün ${d.dayNumber}: ${d.specificTopic}${customPrompt}${contentSummary}`;
+  }).join('\n\n');
+  
+  // Daha eski günlerin sadece konularını listele
+  const olderDays = relevantDays.slice(0, -5);
+  const olderDaysList = olderDays.length > 0
+    ? `\nDAHA ÖNCEKİ GÜNLER (özet):\n${olderDays.map(d => `- Gün ${d.dayNumber}: ${d.specificTopic}`).join('\n')}\n`
+    : '';
   
   const typeLabel = internshipType === 'production' ? 'Üretim/Tasarım' : 'İşletme';
   
@@ -548,30 +593,34 @@ STAJ BİLGİLERİ:
 - Staj Türü: 2. Staj (Üretim/Tasarım/İşletme)
 - Bugünkü Gün: ${dayNumber}
 - Seçilen Kategori: ${typeLabel}
-
-ÖNCEKİ GÜNLER:
-${previousDaysSummary || '(Henüz önceki gün yok, bu ilk gün)'}
+${olderDaysList}
+SON GÜNLER (detaylı):
+${detailedSummary || '(Henüz önceki gün yok, bu ilk gün)'}
 
 ${getExclusionPromptText()}
 
 GÖREV: Gün ${dayNumber} için mantıklı bir konu ve detaylı direktif öner.
 
 KURALLAR:
-1. Önceki günlerle TUTARLI ol, aynı konuyu tekrarlama
-2. Doğal bir ilerleme sağla (basitten karmaşığa)
-3. ${typeLabel} kategorisine uygun konu seç
-4. Direktifte spesifik detaylar ver (hangi aletler, hangi malzemeler, ne öğrenilecek)
-5. Önceki günlerde öğrenilenlere referans ver
-6. 1. stajda işlenen konuları TEKRARLAMA
+1. Yukarıdaki içerikleri DİKKATLİCE oku - önceki günlerde GERÇEKTEN ne yapıldığını anla
+2. Önceki günlerle TUTARLI ol, aynı konuyu veya benzer konuyu TEKRARLAMA
+3. Doğal bir ilerleme sağla (önceki günlerde öğrenilenlerin üzerine inşa et)
+4. ${typeLabel} kategorisine uygun konu seç
+5. Direktifte spesifik detaylar ver (hangi aletler, hangi malzemeler, ne öğrenilecek)
+6. Önceki günlerde öğrenilen SOMUT şeylere referans ver (örn: "Dün öğrenilen X kullanılarak...")
+7. 1. stajda işlenen konuları TEKRARLAMA
+8. HALÜSINASYON YAPMA - sadece yukarıda yazanları referans al
 
 ÇIKTI FORMAT (JSON):
 {
   "suggestedTopic": "Kısa ve öz konu başlığı (max 80 karakter)",
-  "suggestedDirective": "Detaylı direktif. Bugün ne yapılacak, hangi aletler kullanılacak, önceki günlerle bağlantı ne? (2-4 cümle)",
-  "reasoning": "Neden bu konuyu önerdiğinin kısa açıklaması (1 cümle)"
+  "suggestedDirective": "Detaylı direktif. Bugün ne yapılacak, önceki günlerle SOMUT bağlantı ne? (2-4 cümle)",
+  "reasoning": "Neden bu konuyu önerdiğinin açıklaması - önceki günlerle bağlantıyı belirt (1-2 cümle)"
 }
 
 Sadece JSON döndür, başka bir şey yazma.`;
+
+  console.log('[SmartPlan] Sending context for day', dayNumber, '- Previous days:', relevantDays.length);
 
   try {
     const response = await withRetry(async () => {
