@@ -21,23 +21,59 @@ const getSerpApiKey = (): string => {
   return process.env.SERPAPI_KEY || '';
 };
 
-// Domain filtreleme
+// Domain filtreleme - SADECE watermarklı stock siteler
 const DOMAIN_BLACKLIST = [
+  // Stock siteler (watermarklı - kullanılamaz)
   'shutterstock.com', 'istockphoto.com', 'gettyimages.com',
-  'dreamstime.com', 'freepik.com', 'adobestock.com',
-  'pinterest.com', 'facebook.com', 'instagram.com',
-  'twitter.com', 'tiktok.com', 'aliexpress.com'
+  'dreamstime.com', 'adobestock.com', '123rf.com',
+  'depositphotos.com', 'bigstockphoto.com', 'alamy.com',
+  // Sosyal medya (genellikle düşük kalite veya engellenebilir)
+  'pinterest.com', 'tiktok.com'
 ];
 
+// Tercih edilen kaliteli kaynaklar
 const DOMAIN_WHITELIST = [
-  'wikipedia.org', 'wikimedia.org', '.edu',
+  'wikipedia.org', 'wikimedia.org', '.edu', '.gov',
   'elektrikport.com', 'elektrikrehberiniz.com',
-  'electronics-tutorials.ws', 'allaboutcircuits.com'
+  'electronics-tutorials.ws', 'allaboutcircuits.com',
+  'electrical-engineering-portal.com', 'electricaltechnology.org',
+  'circuitdigest.com', 'electronicshub.org',
+  'atexdb.eu', 'ex-machinery.com', 'eaton.com', 'siemens.com'
 ];
+
+/**
+ * URL'yi temizle ve HTTPS'e çevir
+ */
+const sanitizeImageUrl = (url: string): string | null => {
+  try {
+    if (!url) return null;
+    
+    // x-raw-image ve data URL'leri filtrele
+    if (url.startsWith('x-raw-image://') || url.startsWith('data:')) {
+      return null;
+    }
+    
+    // HTTP'yi HTTPS'e çevir (mixed content hatası önleme)
+    if (url.startsWith('http://')) {
+      url = url.replace('http://', 'https://');
+    }
+    
+    if (!url.startsWith('https://')) {
+      return null;
+    }
+    
+    return url;
+  } catch {
+    return null;
+  }
+};
 
 const isValidDomain = (url: string): boolean => {
   try {
-    const domain = new URL(url).hostname.toLowerCase();
+    const sanitized = sanitizeImageUrl(url);
+    if (!sanitized) return false;
+    
+    const domain = new URL(sanitized).hostname.toLowerCase();
     for (const blocked of DOMAIN_BLACKLIST) {
       if (domain.includes(blocked)) return false;
     }
@@ -125,18 +161,69 @@ export const searchImagesWithSerpAPI = async (
 };
 
 /**
+ * Semantic query sonucunu direkt kullan (buildTechnicalQuery bypass)
+ */
+export const searchImagesDirectQuery = async (
+  query: string,
+  count: number = 15,
+  imageType: 'autocad' | 'saha' | 'tablo' | 'genel' = 'genel'
+): Promise<StockImage[]> => {
+  const serpApiKey = getSerpApiKey();
+
+  if (!serpApiKey) {
+    console.log('[ImageService] ⚠️ SerpAPI key not found, falling back to Wikimedia');
+    return searchWikimediaImages(query, count);
+  }
+
+  console.log('[ImageService] 🔍 Direct SerpAPI Search:', query);
+
+  // Görsel tipi mapping - tablo için lineart daha iyi sonuç verir
+  const imageTypeMap: Record<string, 'photo' | 'lineart' | 'clipart' | undefined> = {
+    'autocad': 'lineart',
+    'tablo': undefined, // tablo için filtre kaldırıldı - daha geniş sonuç
+    'saha': 'photo',
+    'genel': undefined
+  };
+
+  try {
+    const results = await searchImagesSerpAPI(query, serpApiKey, {
+      count,
+      imageType: imageTypeMap[imageType],
+      safeSearch: true
+    });
+
+    if (results.length === 0) {
+      console.log('[ImageService] ⚠️ No results, trying Wikimedia...');
+      return searchWikimediaImages(query, count);
+    }
+
+    return convertSerpResults(results);
+  } catch (error) {
+    console.error('[ImageService] ❌ SerpAPI failed:', error);
+    return searchWikimediaImages(query, count);
+  }
+};
+
+/**
  * SerpAPI sonuçlarını StockImage formatına çevir
  */
 const convertSerpResults = (results: SerpAPIImage[]): StockImage[] => {
   return results
-    .filter(img => isValidDomain(img.url))
-    .map((img, index) => ({
-      id: img.id || `serp-${index}-${Date.now()}`,
-      url: img.url,
-      thumbUrl: img.thumbnail || img.url,
-      title: img.title,
-      source: 'serpapi' as const
-    }))
+    .map((img, index) => {
+      const sanitizedUrl = sanitizeImageUrl(img.url);
+      const sanitizedThumb = sanitizeImageUrl(img.thumbnail || img.url);
+      
+      if (!sanitizedUrl) return null;
+      
+      return {
+        id: img.id || `serp-${index}-${Date.now()}`,
+        url: sanitizedUrl,
+        thumbUrl: sanitizedThumb || sanitizedUrl,
+        title: img.title,
+        source: 'serpapi' as const
+      };
+    })
+    .filter((img): img is StockImage => img !== null && isValidDomain(img.url))
     .sort((a, b) => {
       // Tercih edilen domainleri öne al
       const aPreferred = isDomainPreferred(a.url);
@@ -175,13 +262,17 @@ const searchWikimediaImages = async (query: string, count: number = 5): Promise<
 
     Object.values(pages).forEach((page: any, index: number) => {
       if (page.imageinfo?.[0]?.url) {
-        const url = page.imageinfo[0].url;
+        const rawUrl = page.imageinfo[0].url;
+        const sanitizedUrl = sanitizeImageUrl(rawUrl);
+        
+        if (!sanitizedUrl) return;
+        
         // Sadece görsel formatlarını kabul et
-        if (url.match(/\.(jpg|jpeg|png|svg|gif)$/i)) {
+        if (sanitizedUrl.match(/\.(jpg|jpeg|png|svg|gif)$/i)) {
           results.push({
             id: `wiki-${index}-${Date.now()}`,
-            url: url,
-            thumbUrl: url.replace(/\/commons\//, '/commons/thumb/') + '/300px-' + url.split('/').pop(),
+            url: sanitizedUrl,
+            thumbUrl: sanitizedUrl.replace(/\/commons\//, '/commons/thumb/') + '/300px-' + sanitizedUrl.split('/').pop(),
             title: page.title?.replace('File:', '') || query,
             source: 'wikimedia'
           });
@@ -409,27 +500,29 @@ const searchGoogleImages = async (
       return [];
     }
 
-    // Domain filtreleme ve sıralama + x-raw-image ve geçersiz URL filtreleme
+    // Domain filtreleme ve sıralama + URL sanitization
     const validResults = data.items
-      .filter((item: any) => {
-        const url = item.link || '';
-        // x-raw-image ve diğer geçersiz URL'leri filtrele
-        if (url.startsWith('x-raw-image://')) return false;
-        if (!url.startsWith('http')) return false;
-        // Domain kontrolü
-        return isValidDomain(url);
+      .map((item: any, index: number) => {
+        const sanitizedUrl = sanitizeImageUrl(item.link);
+        const sanitizedThumb = sanitizeImageUrl(item.image?.thumbnailLink) || sanitizedUrl;
+        
+        if (!sanitizedUrl) return null;
+        if (!isValidDomain(sanitizedUrl)) return null;
+        
+        return {
+          id: `google-${index}-${Date.now()}`,
+          url: sanitizedUrl,
+          thumbUrl: sanitizedThumb,
+          title: item.title || query,
+          source: 'google' as const,
+          isPreferred: isDomainPreferred(sanitizedUrl)
+        };
       })
-      .map((item: any, index: number) => ({
-        id: `google-${index}-${Date.now()}`,
-        url: item.link,
-        thumbUrl: item.image?.thumbnailLink || item.link,
-        title: item.title || query,
-        source: 'google' as const,
-        isPreferred: isDomainPreferred(item.link)
-      }))
+      .filter((item: any) => item !== null)
       .sort((a: any, b: any) => (b.isPreferred ? 1 : 0) - (a.isPreferred ? 1 : 0));
 
     console.log(`Found ${validResults.length} valid images after filtering`);
+    return validResults;
     return validResults;
   } catch (error) {
     console.error('Google Image Search failed:', error);
@@ -467,27 +560,16 @@ export const searchImages = async (
 
   let allResults: StockImage[] = [];
 
-  // 1. SerpAPI ile ara (PRİMER) - searchImagesWithSerpAPI wrapper kullan
+  // 1. SerpAPI ile ara (PRİMER) - Semantic query sonucunu direkt kullan
   const serpApiKey = getSerpApiKey();
   if (serpApiKey) {
     console.log('Strategy 1: SerpAPI with Semantic Query');
-    
-    // imageType'a göre ek context ekle
-    let searchQuery = englishTopic;
-    if (imageType === 'tablo' && !searchQuery.toLowerCase().includes('table') && !searchQuery.toLowerCase().includes('chart')) {
-      searchQuery += ' reference table chart';
-    } else if (imageType === 'autocad' && !searchQuery.toLowerCase().includes('drawing') && !searchQuery.toLowerCase().includes('diagram')) {
-      searchQuery += ' electrical diagram';
-    } else if (imageType === 'saha') {
-      searchQuery += ' installation site';
-    }
-    
-    console.log('[ImageService] 🔍 Final Search Query:', searchQuery);
+    console.log('[ImageService] 🔍 Search Query:', englishTopic);
     
     try {
-      // Doğru wrapper fonksiyonu kullan
-      const serpResults = await searchImagesWithSerpAPI(
-        searchQuery,
+      // Direkt query fonksiyonunu kullan (buildTechnicalQuery bypass)
+      const serpResults = await searchImagesDirectQuery(
+        englishTopic,
         count,
         imageType as 'autocad' | 'saha' | 'tablo' | 'genel'
       );

@@ -505,12 +505,36 @@ Teknik Açıklama: ${result.technicalDescription}
     setQuickSearchQuery('');
     
     try {
-      // Orijinal topic'i gönder - imageService semantic query yapacak
-      console.log('[QuickSearch] Topic:', day.specificTopic);
-      setQuickSearchQuery(day.specificTopic); // Türkçe topic göster, arama sırasında güncellenecek
+      const topic = day.specificTopic;
+      console.log('[QuickSearch] Topic:', topic);
+      setQuickSearchQuery(topic);
       
-      // Görsel ara - imageService içinde semantic query yapılacak
-      const images = await searchImages(day.specificTopic, 20, 'saha');
+      // Konuya göre imageType otomatik belirle
+      const topicLower = topic.toLowerCase();
+      let imageType: 'tablo' | 'autocad' | 'saha' | 'genel' = 'genel';
+      
+      if (topicLower.includes('tablo') || topicLower.includes('tablosu') || 
+          topicLower.includes('karşılaştırma') || topicLower.includes('sınıf') ||
+          topicLower.includes('değer') || topicLower.includes('hesap') ||
+          topicLower.includes('seçim') || topicLower.includes('standart')) {
+        imageType = 'tablo';
+        console.log('[QuickSearch] Detected: TABLE search');
+      } else if (topicLower.includes('çizim') || topicLower.includes('autocad') || 
+                 topicLower.includes('şema') || topicLower.includes('diyagram') ||
+                 topicLower.includes('plan') || topicLower.includes('proje')) {
+        imageType = 'autocad';
+        console.log('[QuickSearch] Detected: DIAGRAM search');
+      } else if (topicLower.includes('montaj') || topicLower.includes('kurulum') ||
+                 topicLower.includes('saha') || topicLower.includes('şantiye') ||
+                 topicLower.includes('test') || topicLower.includes('ölçüm')) {
+        imageType = 'saha';
+        console.log('[QuickSearch] Detected: SITE/INSTALLATION search');
+      }
+      
+      console.log('[QuickSearch] Using imageType:', imageType);
+      
+      // Görsel ara
+      const images = await searchImages(topic, 20, imageType);
       console.log('[QuickSearch] Found:', images.length, 'images');
       
       setQuickSearchResults(images);
