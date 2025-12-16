@@ -14,6 +14,7 @@ import {
 } from '../curriculum';
 import { GenerationContext } from '../curriculumTypes';
 import { getExclusionPromptText, EXCLUDED_KEYWORDS } from '../excludedTopics';
+import { TECHNICAL_TERMS_GUIDE, validateAndCorrectContent } from './technicalTermsService';
 
 // Initialize the API client
 const getAiClient = () => {
@@ -283,6 +284,8 @@ EK KURALLAR (PROGRESSIVE LEARNING):
 7. Hafta başlarında hafta temasına uygun giriş yap.
 8. Önemli milestone günlerinde (5, 10, 15, 20, 25, 30) özet/değerlendirme hissi ver.
 
+${TECHNICAL_TERMS_GUIDE}
+
 ${getExclusionPromptText()}
 `;
 
@@ -400,6 +403,21 @@ ${day.hasVisual ? '[GÖRSEL AÇIKLAMASI: Görselin ne olduğunu anlatan kısa no
       const parts = finalContent.split('[GÖRSEL AÇIKLAMASI:');
       finalContent = parts[0].trim();
       visualDesc = parts[1].replace(']', '').trim();
+    }
+
+    // 3. Post-processing: Teknik terim doğrulama ve düzeltme
+    const validation = validateAndCorrectContent(finalContent);
+    if (validation.hasCorrections) {
+      console.log('[TechTerms] Düzeltmeler yapıldı:', validation.corrections);
+      finalContent = validation.corrected;
+    }
+
+    // workTitle için de düzeltme uygula
+    if (workTitle) {
+      const titleValidation = validateAndCorrectContent(workTitle);
+      if (titleValidation.hasCorrections) {
+        workTitle = titleValidation.corrected;
+      }
     }
 
     return {
