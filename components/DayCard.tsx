@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { DayEntry, InternshipType } from '../types';
 import { RefreshCw, Camera, PenTool, Loader2, Calendar, ChevronRight, Save, CheckCircle2, CloudUpload, Trash2, Copy, Check, Pencil, X, ChevronDown, ImagePlus, Sparkles, Image as ImageIcon, Lightbulb } from 'lucide-react';
-import { PRODUCTION_TOPICS, MANAGEMENT_TOPICS } from '../constants';
+import { PRODUCTION_TOPICS, MANAGEMENT_TOPICS, TECHNICAL_TABLE_TOPICS } from '../constants';
 import { CurriculumBadge, CurriculumBadgeCompact } from './CurriculumBadge';
 import { getDayContextInfo } from '../services/geminiService';
 
@@ -43,6 +43,7 @@ export const DayCard: React.FC<DayCardProps> = ({
   const [editTopic, setEditTopic] = useState<string>(day.specificTopic);
   const [editCustomPrompt, setEditCustomPrompt] = useState<string>(day.customPrompt || '');
   const [isCustomTopic, setIsCustomTopic] = useState(false);
+  const [topicCategory, setTopicCategory] = useState<'production' | 'tables' | 'management'>('production');
   
   // Curriculum State
   const [showCurriculum, setShowCurriculum] = useState(false);
@@ -54,13 +55,25 @@ export const DayCard: React.FC<DayCardProps> = ({
     setEditTopic(day.specificTopic);
     setEditCustomPrompt(day.customPrompt || '');
 
-    // Check if current topic is in the standard lists
-    const list = day.type === InternshipType.PRODUCTION_DESIGN ? PRODUCTION_TOPICS : MANAGEMENT_TOPICS;
-    // Note: If topic is not in the list (e.g. changed via custom before), set custom mode to true
-    // However, if we change type in parent, day.specificTopic might change.
-    // We check against BOTH lists to be safe, or just the relevant one.
-    // Ideally if it's not in the relevant list, it's custom.
-    setIsCustomTopic(!list.includes(day.specificTopic));
+    // Check which list the topic belongs to
+    if (TECHNICAL_TABLE_TOPICS.includes(day.specificTopic)) {
+      setTopicCategory('tables');
+      setIsCustomTopic(false);
+    } else if (PRODUCTION_TOPICS.includes(day.specificTopic)) {
+      setTopicCategory('production');
+      setIsCustomTopic(false);
+    } else if (MANAGEMENT_TOPICS.includes(day.specificTopic)) {
+      setTopicCategory('management');
+      setIsCustomTopic(false);
+    } else {
+      // Custom topic
+      if (day.type === InternshipType.PRODUCTION_DESIGN) {
+        setTopicCategory('production');
+      } else {
+        setTopicCategory('management');
+      }
+      setIsCustomTopic(true);
+    }
   }, [day.type, day.specificTopic, day.customPrompt]);
 
   const isProduction = day.type === InternshipType.PRODUCTION_DESIGN;
@@ -102,8 +115,24 @@ export const DayCard: React.FC<DayCardProps> = ({
     setEditTopic(day.specificTopic);
     setEditCustomPrompt(day.customPrompt || '');
     
-    const list = day.type === InternshipType.PRODUCTION_DESIGN ? PRODUCTION_TOPICS : MANAGEMENT_TOPICS;
-    setIsCustomTopic(!list.includes(day.specificTopic));
+    // Determine which category the topic belongs to
+    if (TECHNICAL_TABLE_TOPICS.includes(day.specificTopic)) {
+      setTopicCategory('tables');
+      setIsCustomTopic(false);
+    } else if (PRODUCTION_TOPICS.includes(day.specificTopic)) {
+      setTopicCategory('production');
+      setIsCustomTopic(false);
+    } else if (MANAGEMENT_TOPICS.includes(day.specificTopic)) {
+      setTopicCategory('management');
+      setIsCustomTopic(false);
+    } else {
+      if (day.type === InternshipType.PRODUCTION_DESIGN) {
+        setTopicCategory('production');
+      } else {
+        setTopicCategory('management');
+      }
+      setIsCustomTopic(true);
+    }
     
     setIsEditing(true);
   };
@@ -113,17 +142,27 @@ export const DayCard: React.FC<DayCardProps> = ({
     await onUpdatePlan(day, editType, editTopic, editCustomPrompt);
   };
 
-  const handleTypeChange = (type: InternshipType) => {
-    setEditType(type);
+  const handleCategoryChange = (category: 'production' | 'tables' | 'management') => {
+    setTopicCategory(category);
+    
+    // Set the internship type based on category
+    if (category === 'management') {
+      setEditType(InternshipType.MANAGEMENT);
+    } else {
+      // Both 'production' and 'tables' are PRODUCTION_DESIGN type
+      setEditType(InternshipType.PRODUCTION_DESIGN);
+    }
+    
     // If we are NOT in custom mode, update the topic to the first item of the new list
     if (!isCustomTopic) {
-        if (type === InternshipType.PRODUCTION_DESIGN) {
-            setEditTopic(PRODUCTION_TOPICS[0]);
-        } else {
-            setEditTopic(MANAGEMENT_TOPICS[0]);
-        }
+      if (category === 'production') {
+        setEditTopic(PRODUCTION_TOPICS[0]);
+      } else if (category === 'tables') {
+        setEditTopic(TECHNICAL_TABLE_TOPICS[0]);
+      } else {
+        setEditTopic(MANAGEMENT_TOPICS[0]);
+      }
     }
-    // If we are in custom mode, we keep the text as is.
   };
 
   const toggleCustomTopic = () => {
@@ -131,9 +170,11 @@ export const DayCard: React.FC<DayCardProps> = ({
       setIsCustomTopic(newCustomState);
       
       if (!newCustomState) {
-          // Switching back to list: reset topic to first item of current type list
-          if (editType === InternshipType.PRODUCTION_DESIGN) {
+          // Switching back to list: reset topic to first item of current category
+          if (topicCategory === 'production') {
               setEditTopic(PRODUCTION_TOPICS[0]);
+          } else if (topicCategory === 'tables') {
+              setEditTopic(TECHNICAL_TABLE_TOPICS[0]);
           } else {
               setEditTopic(MANAGEMENT_TOPICS[0]);
           }
@@ -141,6 +182,13 @@ export const DayCard: React.FC<DayCardProps> = ({
           // Switching to custom: clear the text to let user type fresh
           setEditTopic("");
       }
+  };
+  
+  // Get current topic list based on category
+  const getCurrentTopicList = () => {
+    if (topicCategory === 'production') return PRODUCTION_TOPICS;
+    if (topicCategory === 'tables') return TECHNICAL_TABLE_TOPICS;
+    return MANAGEMENT_TOPICS;
   };
 
   return (
@@ -506,11 +554,11 @@ export const DayCard: React.FC<DayCardProps> = ({
                     <div className="space-y-4">
                         <div className="space-y-2">
                             <label className="text-xs font-bold text-zinc-500 uppercase tracking-wide">Staj Türü</label>
-                            <div className="flex gap-3">
+                            <div className="flex gap-2">
                                 <button
-                                    onClick={() => handleTypeChange(InternshipType.PRODUCTION_DESIGN)}
-                                    className={`flex-1 py-3 px-4 rounded-lg border text-sm font-medium transition-all ${
-                                        editType === InternshipType.PRODUCTION_DESIGN 
+                                    onClick={() => handleCategoryChange('production')}
+                                    className={`flex-1 py-2.5 px-3 rounded-lg border text-xs font-medium transition-all ${
+                                        topicCategory === 'production'
                                         ? 'bg-amber-500/10 border-amber-500 text-amber-500' 
                                         : 'bg-zinc-950 border-zinc-800 text-zinc-400 hover:bg-zinc-800'
                                     }`}
@@ -518,9 +566,19 @@ export const DayCard: React.FC<DayCardProps> = ({
                                     Üretim/Tasarım
                                 </button>
                                 <button
-                                    onClick={() => handleTypeChange(InternshipType.MANAGEMENT)}
-                                    className={`flex-1 py-3 px-4 rounded-lg border text-sm font-medium transition-all ${
-                                        editType === InternshipType.MANAGEMENT 
+                                    onClick={() => handleCategoryChange('tables')}
+                                    className={`flex-1 py-2.5 px-3 rounded-lg border text-xs font-medium transition-all ${
+                                        topicCategory === 'tables'
+                                        ? 'bg-purple-500/10 border-purple-500 text-purple-500' 
+                                        : 'bg-zinc-950 border-zinc-800 text-zinc-400 hover:bg-zinc-800'
+                                    }`}
+                                >
+                                    📋 Tablolar
+                                </button>
+                                <button
+                                    onClick={() => handleCategoryChange('management')}
+                                    className={`flex-1 py-2.5 px-3 rounded-lg border text-xs font-medium transition-all ${
+                                        topicCategory === 'management'
                                         ? 'bg-blue-500/10 border-blue-500 text-blue-500' 
                                         : 'bg-zinc-950 border-zinc-800 text-zinc-400 hover:bg-zinc-800'
                                     }`}
@@ -557,7 +615,7 @@ export const DayCard: React.FC<DayCardProps> = ({
                                         onChange={(e) => setEditTopic(e.target.value)}
                                         className="w-full bg-zinc-950 border border-zinc-800 rounded-lg py-3 px-4 text-sm text-zinc-300 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 appearance-none"
                                     >
-                                        {(editType === InternshipType.PRODUCTION_DESIGN ? PRODUCTION_TOPICS : MANAGEMENT_TOPICS).map((t, i) => (
+                                        {getCurrentTopicList().map((t, i) => (
                                             <option key={i} value={t}>{t}</option>
                                         ))}
                                     </select>

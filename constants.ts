@@ -67,8 +67,11 @@ export const PRODUCTION_TOPICS = [
   "Bir konut projesinin zayıf akım (data/telefon) sonlandırma işlemleri",
   "Jeneratör transfer panosu (ATS) çalışma prensibi incelemesi ve testi",
   "Kaçak akım rölesi (KAR) açma akımı ve süresi testi",
-  "Termal kamera ile pano içi ısınan bağlantı noktalarının tespiti",
-  // === TEKNİK TABLOLAR KATEGORİSİ ===
+  "Termal kamera ile pano içi ısınan bağlantı noktalarının tespiti"
+];
+
+// Teknik Tablolar Konu Havuzu (Referans Tabloları ve Standartlar)
+export const TECHNICAL_TABLE_TOPICS = [
   "Trafo Dyn11 bağlantı grubu vektör diyagramı incelemesi ve paralel çalışma koşulları",
   "Akım trafosu (CT) oran ve doğruluk sınıfı seçimi için katalog çalışması",
   "Gerilim düşümü hesap tabloları kullanılarak kablo kesiti belirleme",
