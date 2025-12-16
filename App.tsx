@@ -13,7 +13,7 @@ import { VisualGuideModal } from './components/VisualGuideModal';
 import { WeekProgress } from './components/WeekProgress';
 import { generateDayContent, analyzeImage } from './services/geminiService';
 import { searchImages, StockImage, searchByCategory, PRESET_CATEGORIES, CategoryItem } from './services/imageService';
-import { generateImageSearchQuery } from './services/semanticQueryService';
+// semanticQueryService import kaldırıldı - imageService içinde kullanılıyor
 import { ImageAnalysisResult } from './services/imageAnalysisService';
 import { saveDayToFirestore, loadAllDaysFromFirestore, deleteDayFromFirestore, savePlanToFirestore, loadPlanFromFirestore, resetFirestoreData } from './services/firebaseService';
 import { onAuthChange, logOut } from './services/authService';
@@ -505,14 +505,12 @@ Teknik Açıklama: ${result.technicalDescription}
     setQuickSearchQuery('');
     
     try {
-      // Semantic query ile İngilizce arama sorgusu oluştur
+      // Orijinal topic'i gönder - imageService semantic query yapacak
       console.log('[QuickSearch] Topic:', day.specificTopic);
-      const englishQuery = await generateImageSearchQuery(day.specificTopic);
-      console.log('[QuickSearch] Semantic Query:', englishQuery);
-      setQuickSearchQuery(englishQuery);
+      setQuickSearchQuery(day.specificTopic); // Türkçe topic göster, arama sırasında güncellenecek
       
-      // Görsel ara
-      const images = await searchImages(englishQuery, 20, 'saha');
+      // Görsel ara - imageService içinde semantic query yapılacak
+      const images = await searchImages(day.specificTopic, 20, 'saha');
       console.log('[QuickSearch] Found:', images.length, 'images');
       
       setQuickSearchResults(images);

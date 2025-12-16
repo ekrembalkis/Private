@@ -409,9 +409,16 @@ const searchGoogleImages = async (
       return [];
     }
 
-    // Domain filtreleme ve sıralama
+    // Domain filtreleme ve sıralama + x-raw-image ve geçersiz URL filtreleme
     const validResults = data.items
-      .filter((item: any) => isValidDomain(item.link))
+      .filter((item: any) => {
+        const url = item.link || '';
+        // x-raw-image ve diğer geçersiz URL'leri filtrele
+        if (url.startsWith('x-raw-image://')) return false;
+        if (!url.startsWith('http')) return false;
+        // Domain kontrolü
+        return isValidDomain(url);
+      })
       .map((item: any, index: number) => ({
         id: `google-${index}-${Date.now()}`,
         url: item.link,
@@ -460,11 +467,10 @@ export const searchImages = async (
 
   let allResults: StockImage[] = [];
 
-  // 1. SerpAPI ile ara (PRİMER) - Semantic query sonucunu kullan
+  // 1. SerpAPI ile ara (PRİMER) - searchImagesWithSerpAPI wrapper kullan
   const serpApiKey = getSerpApiKey();
   if (serpApiKey) {
     console.log('Strategy 1: SerpAPI with Semantic Query');
-    console.log('[ImageService] 🔍 SerpAPI Search:', englishTopic);
     
     // imageType'a göre ek context ekle
     let searchQuery = englishTopic;
@@ -476,8 +482,15 @@ export const searchImages = async (
       searchQuery += ' installation site';
     }
     
+    console.log('[ImageService] 🔍 Final Search Query:', searchQuery);
+    
     try {
-      const serpResults = await searchImagesSerpAPI(searchQuery, count, imageType as 'autocad' | 'saha' | 'tablo' | 'genel');
+      // Doğru wrapper fonksiyonu kullan
+      const serpResults = await searchImagesWithSerpAPI(
+        searchQuery,
+        count,
+        imageType as 'autocad' | 'saha' | 'tablo' | 'genel'
+      );
       allResults = [...serpResults];
       console.log(`SerpAPI returned ${serpResults.length} results`);
     } catch (error) {
@@ -501,8 +514,11 @@ export const searchImages = async (
   if (allResults.length < 5) {
     console.log('Strategy 3: Google Custom Search (fallback)');
     const googleResults = await searchGoogleImages(englishTopic, 10, imageType);
+    // Duplicate ve geçersiz URL'leri filtrele
     const newGoogleResults = googleResults.filter(r =>
-      !allResults.some(existing => existing.url === r.url)
+      !allResults.some(existing => existing.url === r.url) &&
+      !r.url.startsWith('x-raw-image://') &&
+      r.url.startsWith('http')
     );
     allResults = [...allResults, ...newGoogleResults];
     console.log(`Google returned ${newGoogleResults.length} new results`);
