@@ -205,7 +205,7 @@ const generateCurriculumPrompt = (context: GenerationContext): string => {
 
   // Today's objectives from curriculum
   if (context.todayObjectives.length > 0) {
-    lines.push('BUGÜNÜN ÖĞRENME HEDEFLERİ:');
+    lines.push('MÜFREDAT ÖNERİLERİ (sadece referans - kullanıcı konusu öncelikli):');
     context.todayObjectives.forEach(obj => {
       lines.push(`  • ${obj}`);
     });
@@ -214,7 +214,7 @@ const generateCurriculumPrompt = (context: GenerationContext): string => {
 
   // Suggested activities
   if (context.suggestedActivities.length > 0) {
-    lines.push('ÖNERİLEN AKTİVİTELER:');
+    lines.push('ALTERNATİF AKTİVİTELER (kullanıcı konusu ile uyumluysa kullan):');
     context.suggestedActivities.forEach(activity => {
       lines.push(`  • ${activity}`);
     });
@@ -320,8 +320,14 @@ ${curriculumPrompt}
 === BUGÜNÜN DETAYLARI ===
 Tarih: ${day.date} (Gün ${day.dayNumber}${weekTheme ? ` / Hafta ${curriculumDay?.weekNumber}: ${weekTheme.title}` : ''})
 Staj Türü: ${day.type}
-GÜNÜN SPESİFİK GÖREVİ: ${day.specificTopic}
-${curriculumDay ? `Müfredat Konusu: ${curriculumDay.primaryTopic}` : ''}
+
+⚠️ KRİTİK - BUGÜNÜN KONUSU (EN ÖNCELİKLİ):
+"${day.specificTopic}"
+
+Bu konu kullanıcı tarafından özellikle seçilmiştir. İçerik MUTLAKA bu konu hakkında olmalıdır.
+Müfredat önerileri sadece referans içindir, ASLA kullanıcının seçtiği konuyu değiştirme!
+
+${curriculumDay ? `(Referans - Müfredat önerisi: ${curriculumDay.primaryTopic})` : ''}
 ${curriculumDay ? `Zorluk Seviyesi: ${curriculumDay.difficulty}/5` : ''}
 ${curriculumDay?.isKeyMilestone ? '⭐ Bu gün önemli bir MILESTONE günüdür!' : ''}
 ${day.customPrompt ? `ÖZEL DİREKTİF: ${day.customPrompt}` : ''}
@@ -359,10 +365,12 @@ UYARI: Geçmiş günlerdeki anlatımları birebir tekrar etme.
 === ÇIKTI FORMATI ===
 Lütfen aşağıdaki formatta içerik üret. Başka hiçbir giriş/çıkış konuşması yapma.
 
-FORMAT:
-ÇALIŞMA RAPORU: [Yapılan işi özetleyen 2-5 kelimelik resmi başlık. Örn: "Pano Montajı ve Kablolama"]
+HATIRLATMA: İçerik MUTLAKA "${day.specificTopic}" konusu hakkında olmalıdır!
 
-[Detaylı staj defteri içeriği. 2-4 paragraf. Teknik detaylı ve samimi.]
+FORMAT:
+ÇALIŞMA RAPORU: [${day.specificTopic} ile ilgili 2-5 kelimelik resmi başlık]
+
+[Detaylı staj defteri içeriği. 2-4 paragraf. "${day.specificTopic}" konusunda teknik detaylı ve samimi.]
 ${context && context.currentDay === 1 ? '\n(İlk gün olduğu için oryantasyon ve tanışma ağırlıklı olmalı)' : ''}
 ${context && context.currentDay === 30 ? '\n(Son gün olduğu için değerlendirme ve veda havası olmalı)' : ''}
 ${curriculumDay?.isKeyMilestone ? '\n(Milestone günü - öğrenilenlerin kısa özeti ve ilerleme hissi ver)' : ''}
