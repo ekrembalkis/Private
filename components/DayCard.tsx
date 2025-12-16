@@ -5,7 +5,7 @@ import { DayEntry, InternshipType } from '../types';
 import { RefreshCw, Camera, PenTool, Loader2, Calendar, ChevronRight, Save, CheckCircle2, CloudUpload, Trash2, Copy, Check, Pencil, X, ChevronDown, ImagePlus, Sparkles, Image as ImageIcon, Lightbulb } from 'lucide-react';
 import { PRODUCTION_TOPICS, MANAGEMENT_TOPICS, TECHNICAL_TABLE_TOPICS } from '../constants';
 import { CurriculumBadge, CurriculumBadgeCompact } from './CurriculumBadge';
-import { getDayContextInfo } from '../services/geminiService';
+import { getDayContextInfo, generateSmartPlanSuggestion, SmartPlanSuggestion } from '../services/geminiService';
 
 interface DayCardProps {
   day: DayEntry;
@@ -36,6 +36,10 @@ export const DayCard: React.FC<DayCardProps> = ({
 }) => {
   const [isSaving, setIsSaving] = useState(false);
   const [isQuickSearching, setIsQuickSearching] = useState(false);
+  
+  // AI Suggestion States
+  const [isLoadingAISuggestion, setIsLoadingAISuggestion] = useState(false);
+  const [aiSuggestion, setAiSuggestion] = useState<SmartPlanSuggestion | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [isCopied, setIsCopied] = useState(false);
@@ -94,6 +98,28 @@ export const DayCard: React.FC<DayCardProps> = ({
     setIsQuickSearching(false);
   };
 
+  // AI Önerisi Al
+  const handleGetAISuggestion = async () => {
+    setIsLoadingAISuggestion(true);
+    setAiSuggestion(null);
+    
+    try {
+      const internshipType = editType === InternshipType.PRODUCTION_DESIGN ? 'production' : 'management';
+      const suggestion = await generateSmartPlanSuggestion(day.dayNumber, savedDays, internshipType);
+      
+      setAiSuggestion(suggestion);
+      
+      // Öneriyi otomatik olarak alanlara doldur
+      setEditTopic(suggestion.suggestedTopic);
+      setEditCustomPrompt(suggestion.suggestedDirective);
+      setIsCustomTopic(true); // Custom topic moduna geç
+    } catch (error) {
+      console.error('AI Suggestion Error:', error);
+    } finally {
+      setIsLoadingAISuggestion(false);
+    }
+  };
+
   const handleDeleteClick = () => {
     setShowDeleteConfirm(true);
   };
@@ -123,6 +149,7 @@ export const DayCard: React.FC<DayCardProps> = ({
     setEditType(day.type);
     setEditTopic(day.specificTopic);
     setEditCustomPrompt(day.customPrompt || '');
+    setAiSuggestion(null); // Reset AI suggestion
     
     // Determine which category the topic belongs to
     if (TECHNICAL_TABLE_TOPICS.includes(day.specificTopic)) {
@@ -570,6 +597,45 @@ export const DayCard: React.FC<DayCardProps> = ({
                         <Pencil className="w-5 h-5 text-amber-500" />
                         Planı Düzenle
                     </h3>
+
+                    {/* AI Önerisi Bölümü */}
+                    <div className="mb-6 p-4 bg-gradient-to-r from-emerald-500/10 to-cyan-500/10 border border-emerald-500/20 rounded-xl">
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center gap-2">
+                          <span className="text-lg">🧠</span>
+                          <span className="text-sm font-bold text-emerald-400">AI Önerisi</span>
+                        </div>
+                        <button
+                          onClick={handleGetAISuggestion}
+                          disabled={isLoadingAISuggestion}
+                          className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 disabled:bg-emerald-800 text-white rounded-lg text-xs font-bold transition-all flex items-center gap-2 shadow-lg shadow-emerald-900/20"
+                        >
+                          {isLoadingAISuggestion ? (
+                            <>
+                              <Loader2 className="w-3 h-3 animate-spin" />
+                              Düşünüyor...
+                            </>
+                          ) : (
+                            <>
+                              <Sparkles className="w-3 h-3" />
+                              Öneri Al
+                            </>
+                          )}
+                        </button>
+                      </div>
+                      <p className="text-xs text-zinc-400">
+                        Önceki günlere bakarak bu gün için mantıklı bir konu ve direktif önerir.
+                      </p>
+                      
+                      {aiSuggestion && (
+                        <div className="mt-3 pt-3 border-t border-emerald-500/20 space-y-2">
+                          <div className="flex items-start gap-2">
+                            <span className="text-emerald-400 text-xs">💡</span>
+                            <p className="text-xs text-zinc-300">{aiSuggestion.reasoning}</p>
+                          </div>
+                        </div>
+                      )}
+                    </div>
 
                     <div className="space-y-4">
                         <div className="space-y-2">

@@ -452,3 +452,120 @@ export const getDayContextInfo = (dayNumber: number, savedDays: DayEntry[]) => {
     visualType: curriculumDay.visualType
   };
 };
+
+// ============================================
+// SMART PLAN SUGGESTION (AI Önerisi)
+// ============================================
+
+export interface SmartPlanSuggestion {
+  suggestedTopic: string;
+  suggestedDirective: string;
+  reasoning: string;
+}
+
+/**
+ * Önceki günlere bakarak akıllı plan önerisi üretir
+ */
+export const generateSmartPlanSuggestion = async (
+  dayNumber: number,
+  previousDays: DayEntry[],
+  internshipType: 'production' | 'management'
+): Promise<SmartPlanSuggestion> => {
+  const ai = getAiClient();
+  
+  // Önceki günlerin özetini oluştur
+  const previousDaysSummary = previousDays
+    .filter(d => d.dayNumber < dayNumber && d.specificTopic)
+    .sort((a, b) => a.dayNumber - b.dayNumber)
+    .map(d => `Gün ${d.dayNumber}: ${d.specificTopic}`)
+    .join('\n');
+  
+  const typeLabel = internshipType === 'production' ? 'Üretim/Tasarım' : 'İşletme';
+  
+  const prompt = `Sen bir elektrik mühendisliği staj danışmanısın. Öğrencinin staj defteri için akıllı plan önerisi yapacaksın.
+
+STAJ BİLGİLERİ:
+- Firma: Elektrik malzeme satışı, bakım-onarım, proje çizimi yapan firma
+- Staj Türü: 2. Staj (Üretim/Tasarım/İşletme)
+- Bugünkü Gün: ${dayNumber}
+- Seçilen Kategori: ${typeLabel}
+
+ÖNCEKİ GÜNLER:
+${previousDaysSummary || '(Henüz önceki gün yok, bu ilk gün)'}
+
+${getExclusionPromptText()}
+
+GÖREV: Gün ${dayNumber} için mantıklı bir konu ve detaylı direktif öner.
+
+KURALLAR:
+1. Önceki günlerle TUTARLI ol, aynı konuyu tekrarlama
+2. Doğal bir ilerleme sağla (basitten karmaşığa)
+3. ${typeLabel} kategorisine uygun konu seç
+4. Direktifte spesifik detaylar ver (hangi aletler, hangi malzemeler, ne öğrenilecek)
+5. Önceki günlerde öğrenilenlere referans ver
+6. 1. stajda işlenen konuları TEKRARLAMA
+
+ÇIKTI FORMAT (JSON):
+{
+  "suggestedTopic": "Kısa ve öz konu başlığı (max 80 karakter)",
+  "suggestedDirective": "Detaylı direktif. Bugün ne yapılacak, hangi aletler kullanılacak, önceki günlerle bağlantı ne? (2-4 cümle)",
+  "reasoning": "Neden bu konuyu önerdiğinin kısa açıklaması (1 cümle)"
+}
+
+Sadece JSON döndür, başka bir şey yazma.`;
+
+  try {
+    const response = await ai.models.generateContent({
+      model: "gemini-2.0-flash",
+      contents: [{ role: "user", parts: [{ text: prompt }] }],
+      config: {
+        temperature: 0.7,
+        maxOutputTokens: 500,
+      }
+    });
+    
+    const text = response.text?.trim() || '';
+    
+    // JSON parse et
+    const jsonMatch = text.match(/\{[\s\S]*\}/);
+    if (jsonMatch) {
+      const parsed = JSON.parse(jsonMatch[0]);
+      return {
+        suggestedTopic: parsed.suggestedTopic || '',
+        suggestedDirective: parsed.suggestedDirective || '',
+        reasoning: parsed.reasoning || ''
+      };
+    }
+    
+    throw new Error('JSON parse failed');
+  } catch (error) {
+    console.error('[SmartPlan] Error:', error);
+    
+    // Fallback öneriler
+    const fallbackTopics = {
+      production: [
+        'Pano içi bağlantı kontrolü ve test işlemleri',
+        'Tek hat şeması üzerinden malzeme listesi çıkarma',
+        'Topraklama direnci ölçümü ve değerlendirme',
+        'Motor sürücü parametre ayarları inceleme',
+        'Aydınlatma hesabı ve armatür seçimi'
+      ],
+      management: [
+        'Malzeme stok sayımı ve envanter güncelleme',
+        'Tedarikçi fiyat teklifi karşılaştırma',
+        'Proje dosyası arşivleme ve düzenleme',
+        'İş güvenliği ekipman kontrolü',
+        'Teknik katalog inceleme ve ürün araştırma'
+      ]
+    };
+    
+    const topics = fallbackTopics[internshipType];
+    const randomTopic = topics[dayNumber % topics.length];
+    
+    return {
+      suggestedTopic: randomTopic,
+      suggestedDirective: `Bugün ${randomTopic.toLowerCase()} konusu üzerinde çalışılacak. Mühendis gözetiminde pratik uygulama yapılacak.`,
+      reasoning: 'AI önerisi alınamadı, varsayılan konu önerildi.'
+    };
+  }
+};
