@@ -471,16 +471,29 @@ export const DayCard: React.FC<DayCardProps> = ({
                         </div>
                       </div>
                     ) : (
-                      <button
-                        onClick={() => onSearchImage(day)}
-                        disabled={day.isImageLoading}
-                        className="group flex items-center gap-1.5 text-[11px] text-zinc-600 hover:text-zinc-400 transition-colors opacity-50 hover:opacity-100"
-                        title="İsteğe bağlı görsel ekle"
-                      >
-                        <ImageIcon className="w-3 h-3" />
-                        <span className="italic">görsel ekle</span>
-                        <span className="text-[9px] text-zinc-700 group-hover:text-zinc-500">(opsiyonel)</span>
-                      </button>
+                      <div className="flex flex-col items-center gap-2 opacity-40 hover:opacity-100 transition-opacity">
+                        <span className="text-[10px] text-zinc-500 italic">görsel ekle (opsiyonel)</span>
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() => onQuickImageSearch(day)}
+                            disabled={day.isImageLoading}
+                            className="flex items-center gap-1.5 px-3 py-1.5 bg-zinc-800/50 text-zinc-400 rounded-lg text-[11px] hover:bg-zinc-700/50 hover:text-zinc-300 transition-all border border-zinc-700/50"
+                            title="Konuya göre otomatik görsel bul"
+                          >
+                            <Sparkles className="w-3 h-3" />
+                            Otomatik
+                          </button>
+                          <button
+                            onClick={() => onSearchImage(day)}
+                            disabled={day.isImageLoading}
+                            className="flex items-center gap-1.5 px-3 py-1.5 bg-zinc-800/50 text-zinc-400 rounded-lg text-[11px] hover:bg-zinc-700/50 hover:text-zinc-300 transition-all border border-zinc-700/50"
+                            title="Manuel görsel ara"
+                          >
+                            {day.isImageLoading ? <Loader2 className="w-3 h-3 animate-spin" /> : <ImageIcon className="w-3 h-3" />}
+                            Manuel
+                          </button>
+                        </div>
+                      </div>
                     )}
                   </div>
                 )}
@@ -558,16 +571,29 @@ export const DayCard: React.FC<DayCardProps> = ({
 
                      {/* Opsiyonel Görsel Ekleme - Sadece görsel zorunlu olmayan günlerde */}
                      {!day.hasVisual && !day.imageUrl && (
-                       <button
-                         onClick={() => onSearchImage(day)}
-                         disabled={day.isImageLoading}
-                         className="group/opt flex items-center gap-1.5 text-[11px] text-zinc-500 hover:text-zinc-300 transition-colors mb-1 opacity-60 hover:opacity-100"
-                         title="İsteğe bağlı görsel ekle"
-                       >
-                         <ImageIcon className="w-3 h-3" />
-                         <span className="italic">görsel ekle</span>
-                         <span className="text-[9px] text-zinc-600 group-hover/opt:text-zinc-400">(opsiyonel)</span>
-                       </button>
+                       <div className="flex flex-col items-center gap-2 mb-2 opacity-50 hover:opacity-100 transition-opacity">
+                         <span className="text-[10px] text-zinc-500 italic">görsel ekle (opsiyonel)</span>
+                         <div className="flex gap-2">
+                           <button
+                             onClick={handleQuickSearch}
+                             disabled={day.isImageLoading || isQuickSearching}
+                             className="flex items-center gap-1.5 px-3 py-1.5 bg-zinc-800/50 text-zinc-400 rounded-lg text-[11px] hover:bg-zinc-700/50 hover:text-zinc-300 transition-all border border-zinc-700/50"
+                             title="Konuya göre otomatik görsel bul"
+                           >
+                             {isQuickSearching ? <Loader2 className="w-3 h-3 animate-spin" /> : <Sparkles className="w-3 h-3" />}
+                             Otomatik
+                           </button>
+                           <button
+                             onClick={() => onSearchImage(day)}
+                             disabled={day.isImageLoading}
+                             className="flex items-center gap-1.5 px-3 py-1.5 bg-zinc-800/50 text-zinc-400 rounded-lg text-[11px] hover:bg-zinc-700/50 hover:text-zinc-300 transition-all border border-zinc-700/50"
+                             title="Manuel görsel ara"
+                           >
+                             {day.isImageLoading ? <Loader2 className="w-3 h-3 animate-spin" /> : <ImageIcon className="w-3 h-3" />}
+                             Manuel
+                           </button>
+                         </div>
+                       </div>
                      )}
 
                     <button 
