@@ -10,6 +10,7 @@ import { getDayContextInfo, generateSmartPlanSuggestion, SmartPlanSuggestion } f
 interface DayCardProps {
   day: DayEntry;
   savedDays: DayEntry[];
+  usedTopics: string[]; // Diğer günlerde kullanılan konular
   onRegenerate: (day: DayEntry) => void;
   onSave: (day: DayEntry) => Promise<void>;
   onDelete: (day: DayEntry) => Promise<void>;
@@ -24,6 +25,7 @@ interface DayCardProps {
 export const DayCard: React.FC<DayCardProps> = ({ 
   day, 
   savedDays,
+  usedTopics,
   onRegenerate, 
   onSave, 
   onDelete, 
@@ -105,7 +107,7 @@ export const DayCard: React.FC<DayCardProps> = ({
     
     try {
       const internshipType = editType === InternshipType.PRODUCTION_DESIGN ? 'production' : 'management';
-      const suggestion = await generateSmartPlanSuggestion(day.dayNumber, savedDays, internshipType);
+      const suggestion = await generateSmartPlanSuggestion(day.dayNumber, savedDays, internshipType, usedTopics);
       
       setAiSuggestion(suggestion);
       
@@ -189,14 +191,23 @@ export const DayCard: React.FC<DayCardProps> = ({
       setEditType(InternshipType.PRODUCTION_DESIGN);
     }
     
-    // If we are NOT in custom mode, update the topic to the first item of the new list
+    // If we are NOT in custom mode, update the topic to the first AVAILABLE item of the new list
     if (!isCustomTopic) {
-      if (category === 'production') {
-        setEditTopic(PRODUCTION_TOPICS[0]);
-      } else if (category === 'tables') {
-        setEditTopic(TECHNICAL_TABLE_TOPICS[0]);
+      let topics: string[] = [];
+      if (category === 'production') topics = PRODUCTION_TOPICS;
+      else if (category === 'tables') topics = TECHNICAL_TABLE_TOPICS;
+      else topics = MANAGEMENT_TOPICS;
+      
+      // Kullanılmamış ilk konuyu bul
+      const availableTopics = topics.filter(t => 
+        t === day.specificTopic || !usedTopics.includes(t)
+      );
+      
+      if (availableTopics.length > 0) {
+        setEditTopic(availableTopics[0]);
       } else {
-        setEditTopic(MANAGEMENT_TOPICS[0]);
+        // Tüm konular kullanılmışsa boş bırak (custom topic moduna geçilecek)
+        setEditTopic('');
       }
     }
   };
@@ -206,13 +217,14 @@ export const DayCard: React.FC<DayCardProps> = ({
       setIsCustomTopic(newCustomState);
       
       if (!newCustomState) {
-          // Switching back to list: reset topic to first item of current category
-          if (topicCategory === 'production') {
-              setEditTopic(PRODUCTION_TOPICS[0]);
-          } else if (topicCategory === 'tables') {
-              setEditTopic(TECHNICAL_TABLE_TOPICS[0]);
+          // Switching back to list: reset topic to first AVAILABLE item of current category
+          const currentList = getCurrentTopicList();
+          if (currentList.length > 0) {
+              setEditTopic(currentList[0]);
           } else {
-              setEditTopic(MANAGEMENT_TOPICS[0]);
+              // Kullanılabilir konu yoksa custom modda kal
+              setIsCustomTopic(true);
+              setEditTopic("");
           }
       } else {
           // Switching to custom: clear the text to let user type fresh
@@ -220,11 +232,17 @@ export const DayCard: React.FC<DayCardProps> = ({
       }
   };
   
-  // Get current topic list based on category
+  // Get current topic list based on category (excluding already used topics)
   const getCurrentTopicList = () => {
-    if (topicCategory === 'production') return PRODUCTION_TOPICS;
-    if (topicCategory === 'tables') return TECHNICAL_TABLE_TOPICS;
-    return MANAGEMENT_TOPICS;
+    let topics: string[] = [];
+    if (topicCategory === 'production') topics = PRODUCTION_TOPICS;
+    else if (topicCategory === 'tables') topics = TECHNICAL_TABLE_TOPICS;
+    else topics = MANAGEMENT_TOPICS;
+    
+    // Kullanılmış konuları filtrele (mevcut günün konusu hariç)
+    return topics.filter(topic => 
+      topic === day.specificTopic || !usedTopics.includes(topic)
+    );
   };
 
   return (
@@ -718,42 +736,67 @@ export const DayCard: React.FC<DayCardProps> = ({
                         <div className="space-y-2">
                             <label className="text-xs font-bold text-zinc-500 uppercase tracking-wide">Staj Türü</label>
                             <div className="flex gap-2">
-                                <button
-                                    onClick={() => handleCategoryChange('production')}
-                                    className={`flex-1 py-2.5 px-3 rounded-lg border text-xs font-medium transition-all ${
-                                        topicCategory === 'production'
-                                        ? 'bg-amber-500/10 border-amber-500 text-amber-500' 
-                                        : 'bg-zinc-950 border-zinc-800 text-zinc-400 hover:bg-zinc-800'
-                                    }`}
-                                >
-                                    Üretim/Tasarım
-                                </button>
-                                <button
-                                    onClick={() => handleCategoryChange('tables')}
-                                    className={`flex-1 py-2.5 px-3 rounded-lg border text-xs font-medium transition-all ${
-                                        topicCategory === 'tables'
-                                        ? 'bg-purple-500/10 border-purple-500 text-purple-500' 
-                                        : 'bg-zinc-950 border-zinc-800 text-zinc-400 hover:bg-zinc-800'
-                                    }`}
-                                >
-                                    📋 Tablolar
-                                </button>
-                                <button
-                                    onClick={() => handleCategoryChange('management')}
-                                    className={`flex-1 py-2.5 px-3 rounded-lg border text-xs font-medium transition-all ${
-                                        topicCategory === 'management'
-                                        ? 'bg-blue-500/10 border-blue-500 text-blue-500' 
-                                        : 'bg-zinc-950 border-zinc-800 text-zinc-400 hover:bg-zinc-800'
-                                    }`}
-                                >
-                                    İşletme
-                                </button>
+                                {(() => {
+                                    // Her kategori için kullanılabilir konu sayısını hesapla
+                                    const prodAvailable = PRODUCTION_TOPICS.filter(t => t === day.specificTopic || !usedTopics.includes(t)).length;
+                                    const tablesAvailable = TECHNICAL_TABLE_TOPICS.filter(t => t === day.specificTopic || !usedTopics.includes(t)).length;
+                                    const mgmtAvailable = MANAGEMENT_TOPICS.filter(t => t === day.specificTopic || !usedTopics.includes(t)).length;
+                                    
+                                    return (
+                                        <>
+                                            <button
+                                                onClick={() => handleCategoryChange('production')}
+                                                className={`flex-1 py-2.5 px-3 rounded-lg border text-xs font-medium transition-all ${
+                                                    topicCategory === 'production'
+                                                    ? 'bg-amber-500/10 border-amber-500 text-amber-500' 
+                                                    : 'bg-zinc-950 border-zinc-800 text-zinc-400 hover:bg-zinc-800'
+                                                }`}
+                                            >
+                                                <span>Üretim/Tasarım</span>
+                                                <span className={`ml-1 text-[10px] ${topicCategory === 'production' ? 'text-amber-400/70' : 'text-zinc-600'}`}>
+                                                    ({prodAvailable})
+                                                </span>
+                                            </button>
+                                            <button
+                                                onClick={() => handleCategoryChange('tables')}
+                                                className={`flex-1 py-2.5 px-3 rounded-lg border text-xs font-medium transition-all ${
+                                                    topicCategory === 'tables'
+                                                    ? 'bg-purple-500/10 border-purple-500 text-purple-500' 
+                                                    : 'bg-zinc-950 border-zinc-800 text-zinc-400 hover:bg-zinc-800'
+                                                }`}
+                                            >
+                                                <span>📋 Tablolar</span>
+                                                <span className={`ml-1 text-[10px] ${topicCategory === 'tables' ? 'text-purple-400/70' : 'text-zinc-600'}`}>
+                                                    ({tablesAvailable})
+                                                </span>
+                                            </button>
+                                            <button
+                                                onClick={() => handleCategoryChange('management')}
+                                                className={`flex-1 py-2.5 px-3 rounded-lg border text-xs font-medium transition-all ${
+                                                    topicCategory === 'management'
+                                                    ? 'bg-blue-500/10 border-blue-500 text-blue-500' 
+                                                    : 'bg-zinc-950 border-zinc-800 text-zinc-400 hover:bg-zinc-800'
+                                                }`}
+                                            >
+                                                <span>İşletme</span>
+                                                <span className={`ml-1 text-[10px] ${topicCategory === 'management' ? 'text-blue-400/70' : 'text-zinc-600'}`}>
+                                                    ({mgmtAvailable})
+                                                </span>
+                                            </button>
+                                        </>
+                                    );
+                                })()}
                             </div>
                         </div>
 
                         <div className="space-y-2">
                              <div className="flex items-center justify-between">
-                                <label className="text-xs font-bold text-zinc-500 uppercase tracking-wide">Günlük Konu / Görev</label>
+                                <div className="flex items-center gap-2">
+                                    <label className="text-xs font-bold text-zinc-500 uppercase tracking-wide">Günlük Konu / Görev</label>
+                                    <span className="text-[10px] text-zinc-600 bg-zinc-800 px-1.5 py-0.5 rounded">
+                                        {getCurrentTopicList().length} konu
+                                    </span>
+                                </div>
                                 <button 
                                     onClick={toggleCustomTopic}
                                     className="text-[10px] text-blue-400 hover:text-blue-300 transition-colors font-medium hover:underline"
@@ -761,6 +804,12 @@ export const DayCard: React.FC<DayCardProps> = ({
                                     {isCustomTopic ? 'Listeden Seç' : '+ Kendi Konumu Yaz'}
                                 </button>
                              </div>
+                             
+                             {!isCustomTopic && getCurrentTopicList().length === 0 && (
+                                <p className="text-[11px] text-amber-500 bg-amber-500/10 px-3 py-2 rounded-lg border border-amber-500/20">
+                                    ⚠️ Bu kategorideki tüm konular kullanılmış. Kendi konunuzu yazın veya başka kategori seçin.
+                                </p>
+                             )}
                              
                              {isCustomTopic ? (
                                 <input 
@@ -771,7 +820,7 @@ export const DayCard: React.FC<DayCardProps> = ({
                                     autoFocus
                                     className="w-full bg-zinc-950 border border-zinc-800 rounded-lg py-3 px-4 text-sm text-zinc-300 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 placeholder-zinc-600"
                                 />
-                             ) : (
+                             ) : getCurrentTopicList().length > 0 ? (
                                 <div className="relative">
                                     <select 
                                         value={editTopic}
@@ -784,6 +833,15 @@ export const DayCard: React.FC<DayCardProps> = ({
                                     </select>
                                     <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500 pointer-events-none" />
                                 </div>
+                             ) : (
+                                <input 
+                                    type="text"
+                                    value={editTopic}
+                                    onChange={(e) => setEditTopic(e.target.value)}
+                                    placeholder="Kendi konunuzu yazın..."
+                                    autoFocus
+                                    className="w-full bg-zinc-950 border border-zinc-800 rounded-lg py-3 px-4 text-sm text-zinc-300 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 placeholder-zinc-600"
+                                />
                              )}
                         </div>
 

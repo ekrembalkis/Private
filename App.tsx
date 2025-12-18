@@ -1072,22 +1072,30 @@ Teknik Açıklama: ${result.technicalDescription}
                     <div className="absolute left-6 sm:left-8 top-8 bottom-8 w-px bg-zinc-800 z-0"></div>
 
                     <div className="space-y-8 relative z-10">
-                        {days.map((day, index) => (
-                            <DayCard 
-                                key={`day-${day.dayNumber}-${day.date}`}
-                                day={day}
-                                savedDays={days.filter(d => d.isSaved)}
-                                isLast={index === days.length - 1}
-                                onRegenerate={handleRegenerate}
-                                onSave={handleSave}
-                                onDelete={handleDelete}
-                                onUpdatePlan={handleUpdatePlan}
-                                onSearchImage={handleOpenImagePicker}
-                                onQuickImageSearch={handleQuickImageSearch}
-                                onImageClick={setSelectedImage}
-                                onOpenVisualGuide={handleOpenVisualGuide}
-                            />
-                        ))}
+                        {days.map((day, index) => {
+                            // Sadece KAYDEDİLMİŞ günlerdeki konuları engelle (specificTopic + workTitle)
+                            const usedTopics = days
+                                .filter(d => d.dayNumber !== day.dayNumber && d.isSaved)
+                                .flatMap(d => [d.specificTopic, d.workTitle].filter(Boolean));
+                            
+                            return (
+                                <DayCard 
+                                    key={`day-${day.dayNumber}-${day.date}`}
+                                    day={day}
+                                    savedDays={days.filter(d => d.isSaved)}
+                                    usedTopics={usedTopics}
+                                    isLast={index === days.length - 1}
+                                    onRegenerate={handleRegenerate}
+                                    onSave={handleSave}
+                                    onDelete={handleDelete}
+                                    onUpdatePlan={handleUpdatePlan}
+                                    onSearchImage={handleOpenImagePicker}
+                                    onQuickImageSearch={handleQuickImageSearch}
+                                    onImageClick={setSelectedImage}
+                                    onOpenVisualGuide={handleOpenVisualGuide}
+                                />
+                            );
+                        })}
                     </div>
                 </div>
                 

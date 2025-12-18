@@ -580,7 +580,8 @@ const truncateContent = (content: string, maxLength: number = 300): string => {
 export const generateSmartPlanSuggestion = async (
   dayNumber: number,
   previousDays: DayEntry[],
-  internshipType: 'production' | 'management'
+  internshipType: 'production' | 'management',
+  usedTopics: string[] = [] // Kullanılmış konular - tekrar önerilmemeli
 ): Promise<SmartPlanSuggestion> => {
   const ai = getAiClient();
   
@@ -610,6 +611,11 @@ export const generateSmartPlanSuggestion = async (
     ? `\nDAHA ÖNCEKİ GÜNLER (özet):\n${olderDays.map(d => `- Gün ${d.dayNumber}: ${d.specificTopic}`).join('\n')}\n`
     : '';
   
+  // Kullanılmış konular listesi
+  const usedTopicsList = usedTopics.length > 0
+    ? `\n⛔ KULLANILMIŞ KONULAR (bu konuları KESİNLİKLE önerme):\n${usedTopics.map(t => `- ${t}`).join('\n')}\n`
+    : '';
+  
   const typeLabel = internshipType === 'production' ? 'Üretim/Tasarım' : 'İşletme';
   
   const prompt = `Sen bir elektrik mühendisliği staj danışmanısın. Öğrencinin staj defteri için akıllı plan önerisi yapacaksın.
@@ -622,7 +628,7 @@ STAJ BİLGİLERİ:
 ${olderDaysList}
 SON GÜNLER (detaylı):
 ${detailedSummary || '(Henüz önceki gün yok, bu ilk gün)'}
-
+${usedTopicsList}
 ${getExclusionPromptText()}
 
 GÖREV: Gün ${dayNumber} için mantıklı bir konu ve detaylı direktif öner.
@@ -630,12 +636,13 @@ GÖREV: Gün ${dayNumber} için mantıklı bir konu ve detaylı direktif öner.
 KURALLAR:
 1. Yukarıdaki içerikleri DİKKATLİCE oku - önceki günlerde GERÇEKTEN ne yapıldığını anla
 2. Önceki günlerle TUTARLI ol, aynı konuyu veya benzer konuyu TEKRARLAMA
-3. Doğal bir ilerleme sağla (önceki günlerde öğrenilenlerin üzerine inşa et)
-4. ${typeLabel} kategorisine uygun konu seç
-5. Direktifte spesifik detaylar ver (hangi aletler, hangi malzemeler, ne öğrenilecek)
-6. Önceki günlerde öğrenilen SOMUT şeylere referans ver (örn: "Dün öğrenilen X kullanılarak...")
-7. 1. stajda işlenen konuları TEKRARLAMA
-8. HALÜSINASYON YAPMA - sadece yukarıda yazanları referans al
+3. KULLANILMIŞ KONULARI KESİNLİKLE ÖNERME - bu konular zaten işlendi
+4. Doğal bir ilerleme sağla (önceki günlerde öğrenilenlerin üzerine inşa et)
+5. ${typeLabel} kategorisine uygun konu seç
+6. Direktifte spesifik detaylar ver (hangi aletler, hangi malzemeler, ne öğrenilecek)
+7. Önceki günlerde öğrenilen SOMUT şeylere referans ver (örn: "Dün öğrenilen X kullanılarak...")
+8. 1. stajda işlenen konuları TEKRARLAMA
+9. HALÜSINASYON YAPMA - sadece yukarıda yazanları referans al
 
 ÇIKTI FORMAT (JSON):
 {
