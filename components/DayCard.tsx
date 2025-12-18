@@ -447,6 +447,43 @@ export const DayCard: React.FC<DayCardProps> = ({
                      </div>
                   </div>
                 )}
+
+                {/* Opsiyonel Görsel - Görsel zorunlu olmayan günlerde */}
+                {!day.hasVisual && (
+                  <div className="mt-4 flex justify-center">
+                    {day.imageUrl ? (
+                      <div className="flex items-center gap-3 p-3 bg-zinc-900/50 border border-zinc-800/50 rounded-lg">
+                        <img 
+                          src={day.imageUrl} 
+                          alt="Opsiyonel Görsel" 
+                          className="w-14 h-14 object-cover rounded-md border border-zinc-700/50 cursor-pointer hover:opacity-80 transition-opacity"
+                          onClick={() => onImageClick(day.imageUrl!)}
+                        />
+                        <div className="flex flex-col gap-1">
+                          <span className="text-[10px] text-zinc-500 italic">opsiyonel görsel</span>
+                          <button 
+                            onClick={() => onSearchImage(day)}
+                            className="flex items-center gap-1 text-[11px] text-zinc-400 hover:text-zinc-300 transition-colors"
+                          >
+                            <RefreshCw className="w-2.5 h-2.5" />
+                            değiştir
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <button
+                        onClick={() => onSearchImage(day)}
+                        disabled={day.isImageLoading}
+                        className="group flex items-center gap-1.5 text-[11px] text-zinc-600 hover:text-zinc-400 transition-colors opacity-50 hover:opacity-100"
+                        title="İsteğe bağlı görsel ekle"
+                      >
+                        <ImageIcon className="w-3 h-3" />
+                        <span className="italic">görsel ekle</span>
+                        <span className="text-[9px] text-zinc-700 group-hover:text-zinc-500">(opsiyonel)</span>
+                      </button>
+                    )}
+                  </div>
+                )}
               </div>
             ) : (
               <div className="py-8 flex flex-col items-center justify-center text-zinc-600">
@@ -517,6 +554,20 @@ export const DayCard: React.FC<DayCardProps> = ({
                               <RefreshCw className="w-3 h-3" />
                            </button>
                         </div>
+                     )}
+
+                     {/* Opsiyonel Görsel Ekleme - Sadece görsel zorunlu olmayan günlerde */}
+                     {!day.hasVisual && !day.imageUrl && (
+                       <button
+                         onClick={() => onSearchImage(day)}
+                         disabled={day.isImageLoading}
+                         className="group/opt flex items-center gap-1.5 text-[11px] text-zinc-500 hover:text-zinc-300 transition-colors mb-1 opacity-60 hover:opacity-100"
+                         title="İsteğe bağlı görsel ekle"
+                       >
+                         <ImageIcon className="w-3 h-3" />
+                         <span className="italic">görsel ekle</span>
+                         <span className="text-[9px] text-zinc-600 group-hover/opt:text-zinc-400">(opsiyonel)</span>
+                       </button>
                      )}
 
                     <button 
