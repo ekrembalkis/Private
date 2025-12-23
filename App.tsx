@@ -620,7 +620,7 @@ Teknik Açıklama: ${result.technicalDescription}
     );
   };
 
-  const handleUpdatePlan = async (day: DayEntry, newType: InternshipType, newTopic: string, customPrompt: string) => {
+  const handleUpdatePlan = async (day: DayEntry, newType: InternshipType, newTopic: string, customPrompt: string, hasVisual: boolean) => {
     // Update local state
     const updatedDays = days.map(d => {
         if (d.dayNumber === day.dayNumber) {
@@ -629,6 +629,7 @@ Teknik Açıklama: ${result.technicalDescription}
                 type: newType,
                 specificTopic: newTopic,
                 customPrompt: customPrompt,
+                hasVisual: hasVisual,
                 topic: newType === InternshipType.PRODUCTION_DESIGN 
                     ? 'Üretim/Tasarım/Saha Aktivitesi' 
                     : 'İşletme/Depo/Ofis Aktivitesi',

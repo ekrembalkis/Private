@@ -14,7 +14,7 @@ interface DayCardProps {
   onRegenerate: (day: DayEntry) => void;
   onSave: (day: DayEntry) => Promise<void>;
   onDelete: (day: DayEntry) => Promise<void>;
-  onUpdatePlan: (day: DayEntry, newType: InternshipType, newTopic: string, customPrompt: string) => Promise<void>;
+  onUpdatePlan: (day: DayEntry, newType: InternshipType, newTopic: string, customPrompt: string, hasVisual: boolean) => Promise<void>;
   onSearchImage: (day: DayEntry) => Promise<void>;
   onQuickImageSearch: (day: DayEntry) => Promise<void>;
   onImageClick: (imageUrl: string) => void;
@@ -51,6 +51,7 @@ export const DayCard: React.FC<DayCardProps> = ({
   const [editType, setEditType] = useState<InternshipType>(day.type);
   const [editTopic, setEditTopic] = useState<string>(day.specificTopic);
   const [editCustomPrompt, setEditCustomPrompt] = useState<string>(day.customPrompt || '');
+  const [editHasVisual, setEditHasVisual] = useState<boolean>(day.hasVisual);
   const [isCustomTopic, setIsCustomTopic] = useState(false);
   const [topicCategory, setTopicCategory] = useState<'production' | 'tables' | 'management'>('production');
   
@@ -63,6 +64,7 @@ export const DayCard: React.FC<DayCardProps> = ({
     setEditType(day.type);
     setEditTopic(day.specificTopic);
     setEditCustomPrompt(day.customPrompt || '');
+    setEditHasVisual(day.hasVisual);
 
     // Check which list the topic belongs to
     if (TECHNICAL_TABLE_TOPICS.includes(day.specificTopic)) {
@@ -177,7 +179,7 @@ export const DayCard: React.FC<DayCardProps> = ({
 
   const handleSaveEdit = async () => {
     setIsEditing(false); 
-    await onUpdatePlan(day, editType, editTopic, editCustomPrompt);
+    await onUpdatePlan(day, editType, editTopic, editCustomPrompt, editHasVisual);
   };
 
   const handleCategoryChange = (category: 'production' | 'tables' | 'management') => {
@@ -843,6 +845,35 @@ export const DayCard: React.FC<DayCardProps> = ({
                                     className="w-full bg-zinc-950 border border-zinc-800 rounded-lg py-3 px-4 text-sm text-zinc-300 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 placeholder-zinc-600"
                                 />
                              )}
+                        </div>
+
+                        {/* Görsel Toggle */}
+                        <div className="space-y-2">
+                          <label className="text-xs font-bold text-zinc-500 uppercase tracking-wide">Görsel Durumu</label>
+                          <button
+                            type="button"
+                            onClick={() => setEditHasVisual(!editHasVisual)}
+                            className={`w-full flex items-center justify-between px-4 py-3 rounded-lg border transition-all ${
+                              editHasVisual 
+                                ? 'bg-purple-500/10 border-purple-500 text-purple-400' 
+                                : 'bg-zinc-950 border-zinc-800 text-zinc-500 hover:border-zinc-700'
+                            }`}
+                          >
+                            <div className="flex items-center gap-3">
+                              <Camera className={`w-5 h-5 ${editHasVisual ? 'text-purple-400' : 'text-zinc-600'}`} />
+                              <span className="text-sm font-medium">
+                                {editHasVisual ? 'Bu gün görsel içerecek' : 'Bu gün görselsiz olacak'}
+                              </span>
+                            </div>
+                            <div className={`w-10 h-6 rounded-full transition-all relative ${editHasVisual ? 'bg-purple-500' : 'bg-zinc-700'}`}>
+                              <div className={`w-5 h-5 rounded-full bg-white shadow-md absolute top-0.5 transition-all ${editHasVisual ? 'left-4.5' : 'left-0.5'}`} style={{ left: editHasVisual ? '18px' : '2px' }} />
+                            </div>
+                          </button>
+                          <p className="text-xs text-zinc-600">
+                            {editHasVisual 
+                              ? 'İçerik oluşturmadan önce görsel seçmeniz gerekecek' 
+                              : 'Doğrudan içerik oluşturabilirsiniz'}
+                          </p>
                         </div>
 
                         <div className="space-y-2">
